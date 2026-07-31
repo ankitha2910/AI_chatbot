@@ -19,8 +19,8 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Configure Multer for File Uploads
-const uploadDir = path.join(__dirname, 'uploads');
+// Configure Multer for File Uploads (Uses /tmp in Vercel serverless environment)
+const uploadDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -175,9 +175,13 @@ app.get('/api/stats', (req, res) => {
   res.json(vectorStore.getStats());
 });
 
-// Start Server
-app.listen(PORT, () => {
-  const sbStatus = getSupabaseStatus();
-  console.log(`🚀 AcademiX RAG Express Backend Server running on http://localhost:${PORT}`);
-  console.log(`⚡ Supabase Integration: ${sbStatus.connected ? 'CONNECTED (' + sbStatus.mode + ')' : 'DISCONNECTED (' + sbStatus.message + ')'}`);
-});
+// Start Server (only when not running in Vercel serverless environment)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    const sbStatus = getSupabaseStatus();
+    console.log(`🚀 AcademiX RAG Express Backend Server running on http://localhost:${PORT}`);
+    console.log(`⚡ Supabase Integration: ${sbStatus.connected ? 'CONNECTED (' + sbStatus.mode + ')' : 'DISCONNECTED (' + sbStatus.message + ')'}`);
+  });
+}
+
+export default app;
