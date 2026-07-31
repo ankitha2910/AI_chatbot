@@ -1,0 +1,21 @@
+{
+  "name": "eduassist-rag-server",
+  "version": "1.0.0",
+  "description": "Backend RAG Engine for EduAssist AI Contextual Chatbot",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@langchain/community": "^1.1.29",
+    "@langchain/openai": "^1.5.5",
+    "@supabase/supabase-js": "^2.111.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "pdf-parse": "^1.1.1"
+  }
+}
