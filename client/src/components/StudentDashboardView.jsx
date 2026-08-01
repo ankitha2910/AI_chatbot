@@ -38,7 +38,14 @@ export default function StudentDashboardView({ currentUser, onOpenAuth, onOpenPr
           const notes = [];
           const pdfs = [];
           res.documents.forEach(doc => {
-            const isPdf = doc.title.toLowerCase().endsWith('.pdf') || (doc.type && doc.type.toLowerCase().includes('pdf'));
+            const docTitle = doc.title.toLowerCase();
+            const fileUrl = doc.fileUrl || doc.file_url || '';
+            const isPdf = docTitle.endsWith('.pdf') || 
+                          (doc.type && doc.type.toLowerCase().includes('pdf')) ||
+                          fileUrl.toLowerCase().includes('.pdf') ||
+                          docTitle.includes('handbook') || 
+                          docTitle.includes('guide') || 
+                          docTitle.includes('manual');
             
             const formattedDoc = {
               id: doc.id,
