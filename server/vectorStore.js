@@ -35,135 +35,42 @@ class VectorStoreEngine {
       .toLowerCase()
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
-      .filter(w => w.length > 2);
+      .filter(w => w.length >= 2);
   }
 
   /**
-   * Computes dense semantic vector embedding (dimension 384) for a given text chunk
+   * Expands query acronyms and synonyms to ensure accurate vector matching
    */
-  createVectorEmbedding(text) {
-    const vector = new Array(this.vectorDimension).fill(0);
-    const tokens = this.tokenize(text);
+  expandQuery(query) {
+    let q = query.toLowerCase();
     
-    if (tokens.length === 0) return vector;
-
-    tokens.forEach((token, index) => {
-      // Deterministic hash mapping to vector dimensions
-      let hash = 0;
-      for (let i = 0; i < token.length; i++) {
-        hash = (hash << 5) - hash + token.charCodeAt(i);
-        hash |= 0;
-      }
-      
-      const dim1 = Math.abs(hash) % this.vectorDimension;
-      const dim2 = Math.abs(hash * 31) % this.vectorDimension;
-      const weight = 1 + (index === 0 ? 0.5 : 0); // Position weighting
-
-      vector[dim1] += weight * 0.7;
-      vector[dim2] += weight * 0.3;
-    });
-
-    // L2 Normalization
-    const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
-    if (magnitude > 0) {
-      for (let i = 0; i < vector.length; i++) {
-        vector[i] = vector[i] / magnitude;
-      }
+    // Subject acronym expansions
+    if (/\bdsa\b/.test(q) || /\bdata structures?\b/.test(q)) {
+      q += ' data structures algorithms linear linked list stack queue binary search tree avl graph sorting bfs dfs quicksort';
+    }
+    if (/\bdbms\b/.test(q) || /\bdatabase\b/.test(q)) {
+      q += ' dbms database management systems sql relational schema primary key foreign key normalization 1nf 2nf 3nf bcnf acid transaction join';
+    }
+    if (/\bos\b/.test(q) || /\boperating systems?\b/.test(q)) {
+      q += ' os operating systems kernel process thread pcb cpu scheduling fcfs sjf round robin deadlock banker algorithm paging virtual memory tlb';
+    }
+    if (/\bcn\b/.test(q) || /\bcomputer networks?\b/.test(q) || /\bnetworking\b/.test(q)) {
+      q += ' cn computer networks tcp ip osi reference model 3-way handshake syn ack udp subnetting cidr routing protocol ethernet';
+    }
+    if (/\bai\b/.test(q) || /\bartificial intelligence\b/.test(q)) {
+      q += ' ai artificial intelligence retrieval augmented generation rag vector embeddings cosine similarity hnsw grounding heuristic a* search';
+    }
+    if (/\bml\b/.test(q) || /\bmachine learning\b/.test(q)) {
+      q += ' ml machine learning supervised unsupervised linear regression logistic sigmoid decision trees random forest k-means neural networks backpropagation';
+    }
+    if (/\bpython\b/.test(q)) {
+      q += ' python programming data science list comprehension generator yield magic methods numpy pandas dataframe';
+    }
+    if (/\bjava\b/.test(q)) {
+      q += ' java oop object oriented programming jvm memory heap stack encapsulation inheritance polymorphism multithreading executor service';
     }
 
-    return vector;
-  }
-
-  /**
-   * Calculates cosine similarity between two normalized vectors
-   */
-  cosineSimilarity(vecA, vecB) {
-    let dotProduct = 0;
-    for (let i = 0; i < vecA.length; i++) {
-      dotProduct += vecA[i] * vecB[i];
-    }
-    return Math.max(0, Math.min(1, dotProduct));
-  }
-
-  /**
-   * Chunks a long text document into overlapping chunks (size ~400 chars, overlap ~60 chars)
-   */
-  chunkText(text, maxChars = 450, overlap = 70) {
-    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-    const chunks = [];
-
-    paragraphs.forEach(para => {
-      const trimmed = para.trim();
-      if (trimmed.length <= maxChars) {
-        chunks.push(trimmed);
-      } else {
-        // Split longer paragraphs
-        let start = 0;
-        while (start < trimmed.length) {
-          let end = Math.min(start + maxChars, trimmed.length);
-          // Try to break on sentence or space boundary
-          if (end < trimmed.length) {
-            const lastPeriod = trimmed.lastIndexOf('.', end);
-            if (lastPeriod > start + 100) {
-              end = lastPeriod + 1;
-            } else {
-              const lastSpace = trimmed.lastIndexOf(' ', end);
-              if (lastSpace > start + 100) end = lastSpace;
-            }
-          }
-          const chunk = trimmed.substring(start, end).trim();
-          if (chunk.length > 20) {
-            chunks.push(chunk);
-          }
-          start += (maxChars - overlap);
-        }
-      }
-    });
-
-    return chunks.length > 0 ? chunks : [text.trim()];
-  }
-
-  /**
-   * Reindexes all documents and FAQs in the vector store
-   */
-  reindexAll() {
-    this.chunks = [];
-
-    // Index Documents
-    this.documents.forEach(doc => {
-      const textChunks = this.chunkText(doc.content);
-      textChunks.forEach((chunkText, idx) => {
-        const vector = this.createVectorEmbedding(chunkText);
-        this.chunks.push({
-          id: `${doc.id}-chunk-${idx + 1}`,
-          docId: doc.id,
-          docTitle: doc.title,
-          category: doc.category,
-          type: 'document',
-          content: chunkText,
-          chunkIndex: idx + 1,
-          totalChunks: textChunks.length,
-          vector: vector
-        });
-      });
-    });
-
-    // Index FAQs
-    this.faqs.forEach(faq => {
-      const combinedText = `FAQ Question: ${faq.question}\nAnswer: ${faq.answer}`;
-      const vector = this.createVectorEmbedding(combinedText);
-      this.chunks.push({
-        id: faq.id,
-        docId: faq.id,
-        docTitle: `FAQ: ${faq.question}`,
-        category: faq.category,
-        type: 'faq',
-        content: combinedText,
-        question: faq.question,
-        answer: faq.answer,
-        vector: vector
-      });
-    });
+    return q;
   }
 
   /**
@@ -171,21 +78,43 @@ class VectorStoreEngine {
    */
   search(query, topK = 4) {
     this.queryCount++;
-    const queryVector = this.createVectorEmbedding(query);
+    const expandedQueryText = this.expandQuery(query);
+    const queryVector = this.createVectorEmbedding(expandedQueryText);
     const queryTokens = this.tokenize(query);
+    const expandedTokens = this.tokenize(expandedQueryText);
 
     const scoredChunks = this.chunks.map(chunk => {
       const vecSimilarity = this.cosineSimilarity(queryVector, chunk.vector);
       
-      // Keyword overlap boost for exact query matches
-      const chunkTokens = this.tokenize(chunk.content);
+      // Keyword overlap boost for exact query matches & expanded tokens
+      const chunkTokens = this.tokenize(chunk.content + ' ' + chunk.docTitle + ' ' + chunk.category);
       let keywordHits = 0;
       queryTokens.forEach(qToken => {
-        if (chunkTokens.includes(qToken)) keywordHits++;
+        if (chunkTokens.includes(qToken)) keywordHits += 1.5;
+      });
+      expandedTokens.forEach(eToken => {
+        if (chunkTokens.includes(eToken)) keywordHits += 0.5;
       });
 
-      const keywordBoost = queryTokens.length > 0 ? (keywordHits / queryTokens.length) * 0.35 : 0;
-      const combinedScore = Math.min(0.99, vecSimilarity * 0.65 + keywordBoost);
+      const keywordBoost = expandedTokens.length > 0 ? (keywordHits / expandedTokens.length) * 0.45 : 0;
+      
+      // Category alignment boost
+      let categoryBoost = 0;
+      const catLower = chunk.category ? chunk.category.toLowerCase() : '';
+      if (
+        (queryTokens.includes('dsa') || queryTokens.includes('data')) && catLower.includes('data structures') ||
+        queryTokens.includes('dbms') && catLower.includes('dbms') ||
+        queryTokens.includes('os') && catLower.includes('operating systems') ||
+        queryTokens.includes('cn') && catLower.includes('computer networks') ||
+        queryTokens.includes('ai') && catLower.includes('artificial intelligence') ||
+        queryTokens.includes('ml') && catLower.includes('machine learning') ||
+        queryTokens.includes('python') && catLower.includes('python') ||
+        queryTokens.includes('java') && catLower.includes('java')
+      ) {
+        categoryBoost = 0.25;
+      }
+
+      const combinedScore = Math.min(0.99, vecSimilarity * 0.50 + keywordBoost + categoryBoost);
 
       return {
         ...chunk,
