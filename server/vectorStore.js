@@ -244,8 +244,16 @@ class VectorStoreEngine {
       }
 
       if (dbDocs && dbDocs.length > 0) {
-        // Merge or replace documents with DB records
-        console.log(`✅ Loaded ${dbDocs.length} persistent documents from Supabase.`);
+        // Replace local documents with DB records
+        this.documents = dbDocs.map(d => ({
+          id: d.id,
+          title: d.title,
+          category: d.category,
+          content: d.content,
+          fileUrl: d.file_url,
+          uploadedAt: d.created_at
+        }));
+        console.log(`✅ Loaded ${this.documents.length} persistent documents from Supabase.`);
       } else {
         // Seed initial documents to Supabase
         for (const doc of this.documents) {
@@ -260,21 +268,38 @@ class VectorStoreEngine {
         console.log(`✅ Seeded ${this.documents.length} documents into Supabase.`);
       }
 
-      // Sync vector chunks to Supabase
-      for (const chunk of this.chunks) {
-        await supabase.from('vector_chunks').upsert({
-          id: chunk.id,
-          doc_id: chunk.docId,
-          doc_title: chunk.docTitle,
-          category: chunk.category,
-          type: chunk.type,
-          content: chunk.content,
-          chunk_index: chunk.chunkIndex || 1,
-          total_chunks: chunk.totalChunks || 1,
-          embedding: chunk.vector
-        });
+      // Pull vector chunks if they exist, else sync them
+      const { data: dbChunks, error: chunkErr } = await supabase.from('vector_chunks').select('*');
+      if (dbChunks && dbChunks.length > 0 && !chunkErr) {
+        this.chunks = dbChunks.map(c => ({
+          id: c.id,
+          docId: c.doc_id,
+          docTitle: c.doc_title,
+          category: c.category,
+          type: c.type,
+          content: c.content,
+          chunkIndex: c.chunk_index,
+          totalChunks: c.total_chunks,
+          vector: c.embedding ? (typeof c.embedding === 'string' ? JSON.parse(c.embedding) : c.embedding) : null
+        }));
+        console.log(`✅ Loaded ${this.chunks.length} vector chunks from Supabase.`);
+      } else {
+        // Sync vector chunks to Supabase
+        for (const chunk of this.chunks) {
+          await supabase.from('vector_chunks').upsert({
+            id: chunk.id,
+            doc_id: chunk.docId,
+            doc_title: chunk.docTitle,
+            category: chunk.category,
+            type: chunk.type,
+            content: chunk.content,
+            chunk_index: chunk.chunkIndex || 1,
+            total_chunks: chunk.totalChunks || 1,
+            embedding: chunk.vector
+          });
+        }
+        console.log(`✅ Synchronized ${this.chunks.length} vector chunks to Supabase pgvector table.`);
       }
-      console.log(`✅ Synchronized ${this.chunks.length} vector chunks to Supabase pgvector table.`);
     } catch (err) {
       console.warn('⚠️ Supabase sync exception:', err.message);
     }

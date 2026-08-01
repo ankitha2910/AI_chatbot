@@ -74,7 +74,28 @@ app.delete(['/api/chat/history/:sessionId', '/chat/history/:sessionId'], (req, r
 });
 
 // List All Documents
-app.get(['/api/documents', '/documents'], (req, res) => {
+app.get(['/api/documents', '/documents'], async (req, res) => {
+  if (isSupabaseConnected() && supabase) {
+    try {
+      const { data, error } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
+      if (!error && data) {
+        const formattedDocs = data.map(d => ({
+          id: d.id,
+          title: d.title,
+          category: d.category,
+          content: d.content,
+          fileUrl: d.file_url,
+          uploadedAt: d.created_at
+        }));
+        // Update local memory state for the RAG engine
+        vectorStore.documents = formattedDocs;
+        return res.json({ documents: formattedDocs, count: formattedDocs.length });
+      }
+    } catch (e) {
+      console.warn("Failed to fetch documents from Supabase API:", e.message);
+    }
+  }
+
   res.json({
     documents: vectorStore.documents,
     count: vectorStore.documents.length
