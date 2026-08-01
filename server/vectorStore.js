@@ -253,7 +253,8 @@ class VectorStoreEngine {
             id: doc.id,
             title: doc.title,
             category: doc.category,
-            content: doc.content
+            content: doc.content,
+            file_url: doc.fileUrl || null
           });
         }
         console.log(`✅ Seeded ${this.documents.length} documents into Supabase.`);
@@ -282,13 +283,14 @@ class VectorStoreEngine {
   /**
    * Adds a new document to the vector store (and Supabase if connected)
    */
-  addDocument({ title, category, content }) {
+  addDocument({ title, category, content, fileUrl }) {
     const newDoc = {
       id: `doc-${crypto.randomUUID().substring(0, 8)}`,
       title,
       category: category || "General Reference",
       uploadedAt: new Date().toISOString(),
-      content
+      content,
+      fileUrl: fileUrl || null
     };
 
     this.documents.unshift(newDoc);
@@ -300,7 +302,8 @@ class VectorStoreEngine {
         id: newDoc.id,
         title: newDoc.title,
         category: newDoc.category,
-        content: newDoc.content
+        content: newDoc.content,
+        file_url: newDoc.fileUrl || null
       }).then(() => {
         // Sync document chunks
         const docChunks = this.chunks.filter(c => c.docId === newDoc.id);

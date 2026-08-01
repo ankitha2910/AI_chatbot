@@ -7,7 +7,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { vectorStore } from './vectorStore.js';
 import { RAGEngine } from './ragEngine.js';
-import { getSupabaseStatus } from './supabaseClient.js';
+import { supabase, isSupabaseConnected, getSupabaseStatus } from './supabaseClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,10 +82,11 @@ app.get(['/api/documents', '/documents'], (req, res) => {
 });
 
 // Ingest / Upload Document (Text or PDF simulation)
-app.post(['/api/documents/upload', '/documents/upload'], upload.single('file'), (req, res) => {
+app.post(['/api/documents/upload', '/documents/upload'], upload.single('file'), async (req, res) => {
   try {
     const { title, category, textContent } = req.body;
     let finalContent = textContent || '';
+    let fileUrl = null;
 
     if (req.file) {
       const filePath = req.file.path;
@@ -96,6 +97,28 @@ app.post(['/api/documents/upload', '/documents/upload'], upload.single('file'), 
         // Simple fallback extracted text representation for uploaded documents
         finalContent = `Extracted Text content from uploaded file: ${req.file.originalname}.\nFile size: ${req.file.size} bytes.\n\n${textContent || 'Document uploaded to AcademiX Knowledge Store.'}`;
       }
+
+      // Upload file to Supabase Storage if connected
+      if (isSupabaseConnected() && supabase) {
+        const fileData = fs.readFileSync(filePath);
+        const fileName = `${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase
+          .storage
+          .from('documents')
+          .upload(fileName, fileData, {
+            contentType: req.file.mimetype,
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error("Supabase Storage Upload Error:", uploadError.message);
+        } else if (uploadData) {
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(fileName);
+          fileUrl = publicUrl;
+        }
+      }
     }
 
     if (!title || !finalContent) {
@@ -105,7 +128,8 @@ app.post(['/api/documents/upload', '/documents/upload'], upload.single('file'), 
     const newDoc = vectorStore.addDocument({
       title: title.trim(),
       category: category || 'General Ingested',
-      content: finalContent.trim()
+      content: finalContent.trim(),
+      fileUrl: fileUrl
     });
 
     res.status(201).json({

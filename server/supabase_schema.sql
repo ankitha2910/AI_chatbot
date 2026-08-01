@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.documents (
     title TEXT NOT NULL,
     category TEXT DEFAULT 'General Reference',
     content TEXT NOT NULL,
+    file_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
