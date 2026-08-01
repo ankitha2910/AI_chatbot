@@ -193,13 +193,15 @@ export default function LandingView({
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
 
-            <button 
-              onClick={() => onNavigateDoubtSolver && onNavigateDoubtSolver()}
-              className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300 hover:text-white transition-all py-4 px-6 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 shadow-lg shadow-amber-500/10 cursor-pointer font-heading"
-            >
-              <HelpCircle className="h-4 w-4 text-amber-400" />
-              <span>Solve Academic Doubt</span>
-            </button>
+            {!isAdmin && (
+              <button 
+                onClick={() => onNavigateDoubtSolver && onNavigateDoubtSolver()}
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300 hover:text-white transition-all py-4 px-6 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 shadow-lg shadow-amber-500/10 cursor-pointer font-heading"
+              >
+                <HelpCircle className="h-4 w-4 text-amber-400" />
+                <span>Solve Academic Doubt</span>
+              </button>
+            )}
 
             {!currentUser && (
               <button 

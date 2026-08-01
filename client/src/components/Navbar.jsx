@@ -82,20 +82,22 @@ export default function Navbar({
             </button>
           )}
 
-          {/* Doubt Resolver tab */}
-          <button
-            onClick={() => handleNavClick('doubt-solver')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-              currentView === 'doubt-solver' 
-                ? 'bg-gradient-to-r from-amber-500/20 to-teal-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/10' 
-                : 'text-slate-300 hover:text-white hover:bg-white/5'
-            }`}
-            title={!currentUser ? "Sign in or register as Student / Admin to access" : "Solve Academic Doubts"}
-          >
-            <HelpCircle className="h-4 w-4 text-amber-400" />
-            <span>Doubt Resolver</span>
-            {!currentUser && <Lock className="h-3 w-3 text-slate-400 opacity-60 ml-0.5" />}
-          </button>
+          {/* Doubt Resolver tab (Hidden for Administrator logins) */}
+          {!isAdmin && (
+            <button
+              onClick={() => handleNavClick('doubt-solver')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'doubt-solver' 
+                  ? 'bg-gradient-to-r from-amber-500/20 to-teal-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/10' 
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+              }`}
+              title={!currentUser ? "Sign in or register as Student / Admin to access" : "Solve Academic Doubts"}
+            >
+              <HelpCircle className="h-4 w-4 text-amber-400" />
+              <span>Doubt Resolver</span>
+              {!currentUser && <Lock className="h-3 w-3 text-slate-400 opacity-60 ml-0.5" />}
+            </button>
+          )}
 
           {/* AI Assistant tab */}
           <button
