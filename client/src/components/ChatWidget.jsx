@@ -129,14 +129,14 @@ export default function ChatWidget({ activeQuery, setActiveQuery }) {
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-full bg-gradient-to-r from-teal-500 to-indigo-600 p-4 text-white shadow-2xl shadow-teal-500/40 transition-all hover:scale-110 hover:shadow-teal-500/60 group"
-          title="Open EduAssist RAG Assistant"
+          title="Open AcademiX RAG Assistant"
         >
           <div className="relative">
             <Sparkles className="h-6 w-6 transition-transform group-hover:rotate-12" />
             <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-[#050811] animate-pulse"></span>
           </div>
           <span className="text-xs font-extrabold uppercase tracking-wider pr-1 hidden sm:inline font-heading">
-            Ask EduAssist AI
+            ASK ACADEMIX AI
           </span>
         </button>
       )}
@@ -193,7 +193,7 @@ export default function ChatWidget({ activeQuery, setActiveQuery }) {
                 className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-fade-in`}
               >
                 <div className="flex items-center gap-1.5 mb-1 text-[10px] text-slate-400 font-medium">
-                  <span>{msg.role === 'user' ? 'You' : 'EduAssist AI'}</span>
+                  <span>{msg.role === 'user' ? 'You' : 'AcademiX AI'}</span>
                   <span>•</span>
                   <span>{msg.timestamp}</span>
                 </div>

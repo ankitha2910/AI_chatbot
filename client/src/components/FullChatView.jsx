@@ -196,7 +196,7 @@ export default function FullChatView({ currentUser }) {
               } animate-fade-in`}
             >
               <div className="flex items-center gap-2 mb-1 text-xs text-slate-400">
-                <span className="font-semibold">{msg.role === 'user' ? 'You' : 'EduAssist AI Assistant'}</span>
+                <span className="font-semibold">{msg.role === 'user' ? 'You' : 'AcademiX AI Assistant'}</span>
                 <span>•</span>
                 <span>{msg.timestamp}</span>
               </div>
