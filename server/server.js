@@ -79,19 +79,30 @@ app.get(['/api/documents', '/documents'], async (req, res) => {
     try {
       const { data, error } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
       if (!error && data) {
-        const formattedDocs = data.map(d => ({
-          id: d.id,
-          title: d.title,
-          category: d.category,
-          content: d.content,
-          fileUrl: d.file_url,
-          fileName: d.file_name,
-          department: d.department,
-          semester: d.semester,
-          uploadedBy: d.uploaded_by,
-          status: d.status,
-          uploadedAt: d.created_at
-        }));
+        const formattedDocs = data.map(d => {
+          let fileUrl = d.file_url;
+          let extra = {};
+          if (fileUrl && fileUrl.startsWith('{')) {
+            try {
+              const parsed = JSON.parse(fileUrl);
+              fileUrl = parsed.url;
+              extra = parsed;
+            } catch(e) {}
+          }
+          return {
+            id: d.id,
+            title: d.title,
+            category: d.category,
+            content: d.content,
+            fileUrl: fileUrl,
+            fileName: extra.fileName || null,
+            department: extra.department || 'All Departments',
+            semester: extra.semester || 'All Semesters',
+            uploadedBy: extra.uploadedBy || 'Admin',
+            status: extra.status || 'published',
+            uploadedAt: d.created_at
+          };
+        });
         // Update local memory state for the RAG engine
         vectorStore.documents = formattedDocs;
         return res.json({ documents: formattedDocs, count: formattedDocs.length });
@@ -120,16 +131,22 @@ app.post(['/api/documents/sync-storage', '/documents/sync-storage'], async (req,
     if (!storageFiles || storageFiles.length === 0) return res.json({ message: "No files found in storage.", synced: 0 });
 
     // 2. Fetch all existing documents from DB
-    const { data: dbDocs, error: dbError } = await supabase.from('documents').select('file_name, file_url');
+    const { data: dbDocs, error: dbError } = await supabase.from('documents').select('file_url');
     if (dbError) throw dbError;
 
     // Build a set of known files
-    const knownFiles = new Set(dbDocs.map(d => d.file_name).filter(Boolean));
+    const knownFiles = new Set();
     
-    // Fallback: check file_url if file_name is missing
+    // Fallback: check file_url to extract filename
     dbDocs.forEach(d => {
-      if (d.file_url) {
-        const urlParts = d.file_url.split('/');
+      let urlStr = d.file_url;
+      if (urlStr && urlStr.startsWith('{')) {
+        try {
+           urlStr = JSON.parse(urlStr).url;
+        } catch(e) {}
+      }
+      if (urlStr) {
+        const urlParts = urlStr.split('/');
         knownFiles.add(urlParts[urlParts.length - 1]);
       }
     });
@@ -144,17 +161,21 @@ app.post(['/api/documents/sync-storage', '/documents/sync-storage'], async (req,
       if (!knownFiles.has(file.name)) {
         const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(file.name);
         
+        const payload = JSON.stringify({
+          url: publicUrl,
+          fileName: file.name,
+          department: 'All Departments',
+          semester: 'All Semesters',
+          uploadedBy: 'System Recovery',
+          status: 'draft'
+        });
+
         const newDoc = {
           id: `doc-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           title: `Recovered Document: ${file.name}`,
           category: 'General Reference',
           content: 'Recovered from storage bucket. Pending content indexing.',
-          file_url: publicUrl,
-          file_name: file.name,
-          department: 'All Departments',
-          semester: 'All Semesters',
-          uploaded_by: 'System Recovery',
-          status: 'draft'
+          file_url: payload
         };
 
         const { error: insertError } = await supabase.from('documents').insert(newDoc);

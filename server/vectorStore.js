@@ -249,34 +249,48 @@ class VectorStoreEngine {
 
       if (dbDocs && dbDocs.length > 0) {
         // Replace local documents with DB records
-        this.documents = dbDocs.map(d => ({
-          id: d.id,
-          title: d.title,
-          category: d.category,
-          content: d.content,
-          fileUrl: d.file_url,
-          fileName: d.file_name,
-          department: d.department,
-          semester: d.semester,
-          uploadedBy: d.uploaded_by,
-          status: d.status,
-          uploadedAt: d.created_at
-        }));
+        this.documents = dbDocs.map(d => {
+          let fileUrl = d.file_url;
+          let extra = {};
+          if (fileUrl && fileUrl.startsWith('{')) {
+            try {
+              const parsed = JSON.parse(fileUrl);
+              fileUrl = parsed.url;
+              extra = parsed;
+            } catch(e) {}
+          }
+          return {
+            id: d.id,
+            title: d.title,
+            category: d.category,
+            content: d.content,
+            fileUrl: fileUrl,
+            fileName: extra.fileName || null,
+            department: extra.department || 'All Departments',
+            semester: extra.semester || 'All Semesters',
+            uploadedBy: extra.uploadedBy || 'Admin',
+            status: extra.status || 'published',
+            uploadedAt: d.created_at
+          };
+        });
         console.log(`✅ Loaded ${this.documents.length} persistent documents from Supabase.`);
       } else {
         // Seed initial documents to Supabase
         for (const doc of this.documents) {
+          const payload = JSON.stringify({
+            url: doc.fileUrl || null,
+            fileName: doc.fileName || null,
+            department: doc.department || 'All Departments',
+            semester: doc.semester || 'All Semesters',
+            uploadedBy: doc.uploadedBy || 'Admin',
+            status: doc.status || 'published'
+          });
           await supabase.from('documents').upsert({
             id: doc.id,
             title: doc.title,
             category: doc.category,
             content: doc.content,
-            file_url: doc.fileUrl || null,
-            file_name: doc.fileName || null,
-            department: doc.department || 'All Departments',
-            semester: doc.semester || 'All Semesters',
-            uploaded_by: doc.uploadedBy || 'Admin',
-            status: doc.status || 'published'
+            file_url: payload
           });
         }
         console.log(`✅ Seeded ${this.documents.length} documents into Supabase.`);
@@ -285,13 +299,23 @@ class VectorStoreEngine {
       // Pull vector chunks if they exist, else sync them
       const { data: dbChunks, error: chunkErr } = await supabase.from('vector_chunks').select('*');
       if (dbChunks && dbChunks.length > 0 && !chunkErr) {
-        this.chunks = dbChunks.map(c => ({
-          id: c.id,
-          docId: c.doc_id,
-          docTitle: c.doc_title,
-          category: c.category,
-          department: c.department,
-          semester: c.semester,
+        this.chunks = dbChunks.map(c => {
+          let cat = c.category;
+          let extra = {};
+          if (cat && cat.startsWith('{')) {
+            try {
+              const parsed = JSON.parse(cat);
+              cat = parsed.category;
+              extra = parsed;
+            } catch(e) {}
+          }
+          return {
+            id: c.id,
+            docId: c.doc_id,
+            docTitle: c.doc_title,
+            category: cat,
+            department: extra.department || 'All Departments',
+            semester: extra.semester || 'All Semesters',
           type: c.type,
           content: c.content,
           chunkIndex: c.chunk_index,
@@ -302,13 +326,16 @@ class VectorStoreEngine {
       } else {
         // Sync vector chunks to Supabase
         for (const chunk of this.chunks) {
+          const payload = JSON.stringify({
+            category: chunk.category,
+            department: chunk.department || 'All Departments',
+            semester: chunk.semester || 'All Semesters'
+          });
           await supabase.from('vector_chunks').upsert({
             id: chunk.id,
             doc_id: chunk.docId,
             doc_title: chunk.docTitle,
-            category: chunk.category,
-            department: chunk.department || 'All Departments',
-            semester: chunk.semester || 'All Semesters',
+            category: payload,
             type: chunk.type,
             content: chunk.content,
             chunk_index: chunk.chunkIndex || 1,
@@ -346,31 +373,41 @@ class VectorStoreEngine {
 
     // Async sync to Supabase
     if (isSupabaseConnected() && supabase) {
+      const payload = JSON.stringify({
+        url: newDoc.fileUrl || null,
+        fileName: newDoc.fileName || null,
+        department: newDoc.department || 'All Departments',
+        semester: newDoc.semester || 'All Semesters',
+        uploadedBy: newDoc.uploadedBy || 'Admin',
+        status: newDoc.status || 'published'
+      });
       supabase.from('documents').insert({
         id: newDoc.id,
         title: newDoc.title,
         category: newDoc.category,
-        department: newDoc.department,
-        semester: newDoc.semester,
         content: newDoc.content,
-        file_url: newDoc.fileUrl || null,
-        file_name: newDoc.fileName || null,
-        uploaded_by: newDoc.uploadedBy || 'Admin',
-        status: newDoc.status || 'published'
+        file_url: payload
       }).then(() => {
         // Sync document chunks
         const docChunks = this.chunks.filter(c => c.docId === newDoc.id);
-        const chunkRecords = docChunks.map(c => ({
-          id: c.id,
-          doc_id: c.docId,
-          doc_title: c.docTitle,
-          category: c.category,
-          type: c.type,
-          content: c.content,
-          chunk_index: c.chunkIndex,
-          total_chunks: c.totalChunks,
-          embedding: c.vector
-        }));
+        const chunkRecords = docChunks.map(c => {
+          const chunkPayload = JSON.stringify({
+            category: c.category,
+            department: c.department || 'All Departments',
+            semester: c.semester || 'All Semesters'
+          });
+          return {
+            id: c.id,
+            doc_id: c.docId,
+            doc_title: c.docTitle,
+            category: chunkPayload,
+            type: c.type,
+            content: c.content,
+            chunk_index: c.chunkIndex,
+            total_chunks: c.totalChunks,
+            embedding: c.vector
+          };
+        });
         return supabase.from('vector_chunks').insert(chunkRecords);
       }).catch(err => console.warn('Supabase document insert error:', err.message));
     }
