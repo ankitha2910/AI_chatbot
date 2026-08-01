@@ -1,16 +1,12 @@
 import React from 'react';
 import { 
-  Sparkles, MessageSquare, Database, Home, LogIn, UserPlus, 
-  LogOut, HelpCircle, GraduationCap, Shield, Lock, Sun, Moon, BookOpen
+  Sparkles, LogIn, UserPlus, LogOut, GraduationCap, Shield 
 } from 'lucide-react';
 
 export default function Navbar({ 
   currentView, 
   setCurrentView, 
-  stats, 
   currentUser, 
-  theme,
-  toggleTheme,
   onOpenAuth, 
   onLogout,
   onOpenProfile 
@@ -18,17 +14,9 @@ export default function Navbar({
   const isStudent = currentUser?.role === 'Student';
   const isAdmin = currentUser?.role === 'Administrator';
 
-  const handleNavClick = (view) => {
-    if (view !== 'landing' && !currentUser) {
-      onOpenAuth('signin', `Please sign in or create an account as a Student or Administrator to access ${view === 'doubt-solver' ? 'Doubt Resolver' : view === 'student-hub' ? 'Student Hub' : view === 'admin' ? 'Admin Portal' : 'AI Assistant'}.`);
-      return;
-    }
-    setCurrentView(view);
-  };
-
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050811]/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         
         {/* Logo */}
         <div 
@@ -51,85 +39,6 @@ export default function Navbar({
             <p className="text-[10px] text-slate-400 hidden sm:block">Smart Campus Knowledge & RAG Engine</p>
           </div>
         </div>
-
-        {/* Navigation links (Guarded by authentication) */}
-        <nav className="flex items-center gap-1.5 sm:gap-2">
-          {/* Home tab (Always accessible) */}
-          <button
-            onClick={() => setCurrentView('landing')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-              currentView === 'landing' 
-                ? 'bg-white/10 text-white border border-white/15' 
-                : 'text-slate-300 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Home className="h-4 w-4" />
-            <span className="hidden sm:inline">Home</span>
-          </button>
-
-          {/* Student Hub Tab (Visible for Students) */}
-          {isStudent && (
-            <button
-              onClick={() => handleNavClick('student-hub')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                currentView === 'student-hub' 
-                  ? 'bg-gradient-to-r from-teal-500/20 to-emerald-500/20 text-teal-300 border border-teal-500/40 shadow-sm' 
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <BookOpen className="h-4 w-4 text-teal-400" />
-              <span>Student Hub</span>
-            </button>
-          )}
-
-          {/* Doubt Resolver tab (Hidden for Administrator logins) */}
-          {!isAdmin && (
-            <button
-              onClick={() => handleNavClick('doubt-solver')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                currentView === 'doubt-solver' 
-                  ? 'bg-gradient-to-r from-amber-500/20 to-teal-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/10' 
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
-              }`}
-              title={!currentUser ? "Sign in or register as Student / Admin to access" : "Solve Academic Doubts"}
-            >
-              <HelpCircle className="h-4 w-4 text-amber-400" />
-              <span>Doubt Resolver</span>
-              {!currentUser && <Lock className="h-3 w-3 text-slate-400 opacity-60 ml-0.5" />}
-            </button>
-          )}
-
-          {/* AI Assistant tab */}
-          <button
-            onClick={() => handleNavClick('chat')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-              currentView === 'chat' 
-                ? 'bg-gradient-to-r from-teal-500/20 to-indigo-500/20 text-teal-300 border border-teal-500/40 shadow-sm shadow-teal-500/10' 
-                : 'text-slate-300 hover:text-white hover:bg-white/5'
-            }`}
-            title={!currentUser ? "Sign in or register as Student / Admin to access" : "AcademiX AI Assistant"}
-          >
-            <MessageSquare className="h-4 w-4 text-teal-400" />
-            <span>AI Assistant</span>
-            {!currentUser && <Lock className="h-3 w-3 text-slate-400 opacity-60 ml-0.5" />}
-          </button>
-
-          {/* Knowledge Admin Studio Tab (ONLY visible for Administrator logins) */}
-          {isAdmin && (
-            <button
-              onClick={() => handleNavClick('admin')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                currentView === 'admin' 
-                  ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm shadow-indigo-500/10' 
-                  : 'text-indigo-300 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20'
-              }`}
-              title="Knowledge Admin Studio"
-            >
-              <Database className="h-4 w-4 text-indigo-400" />
-              <span>Knowledge Admin Studio</span>
-            </button>
-          )}
-        </nav>
 
         {/* Auth / Profile Controls */}
         <div className="flex items-center gap-3">
@@ -180,7 +89,7 @@ export default function Navbar({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onOpenAuth('signin', 'Please sign in or create an account as a Student or Administrator.')}
-                className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300 hover:text-white px-3 py-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-all"
+                className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300 hover:text-white px-3 py-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-all cursor-pointer"
               >
                 <LogIn className="h-3.5 w-3.5" />
                 <span>Sign In</span>

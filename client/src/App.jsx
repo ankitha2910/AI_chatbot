@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import LandingView from './components/LandingView';
-import FullChatView from './components/FullChatView';
-import DoubtSolverView from './components/DoubtSolverView';
 import StudentDashboardView from './components/StudentDashboardView';
 import AdminView from './components/AdminView';
-import ChatWidget from './components/ChatWidget';
 import AuthModal from './components/AuthModal';
 import UserProfileModal from './components/UserProfileModal';
 import { fetchStats } from './services/api';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'student-hub' | 'doubt-solver' | 'chat' | 'admin'
-  const [activeQuery, setActiveQuery] = useState('');
+  const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'student-hub' | 'admin'
   const [stats, setStats] = useState(null);
 
   // Auth State with enriched role-specific fields
@@ -47,7 +43,7 @@ export default function App() {
 
   const handleNavigate = (view) => {
     if (view !== 'landing' && !currentUser) {
-      handleOpenAuth('signin', `Please sign in or create an account as a Student or Administrator to access ${view === 'doubt-solver' ? 'Doubt Resolver' : view === 'student-hub' ? 'Student Hub' : view === 'admin' ? 'Admin Portal' : 'AI Assistant'}.`);
+      handleOpenAuth('signin', `Please sign in or create an account as a Student or Administrator to access ${view === 'student-hub' ? 'Student Hub' : view === 'admin' ? 'Admin Portal' : 'this page'}.`);
       return;
     }
     setCurrentView(view);
@@ -78,14 +74,15 @@ export default function App() {
 
   const handleStartChatWithQuery = (queryText = '') => {
     if (!currentUser) {
-      handleOpenAuth('signin', 'Please sign in or create an account as a Student or Administrator to ask questions.');
+      handleOpenAuth('signin', 'Please sign in or create an account as a Student to ask questions.');
       return;
     }
 
-    if (queryText) {
-      setActiveQuery(queryText);
+    if (currentUser.role === 'Administrator') {
+      setCurrentView('admin');
+    } else {
+      setCurrentView('student-hub');
     }
-    setCurrentView('chat');
   };
 
   return (
@@ -95,7 +92,6 @@ export default function App() {
       <Navbar 
         currentView={currentView} 
         setCurrentView={handleNavigate} 
-        stats={stats} 
         currentUser={currentUser}
         onOpenAuth={handleOpenAuth}
         onLogout={handleLogout}
@@ -103,14 +99,13 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1">
+      <main className="flex-1 flex flex-col">
         {currentView === 'landing' && (
           <LandingView 
             onStartChat={handleStartChatWithQuery} 
             onOpenAuth={handleOpenAuth}
             currentUser={currentUser}
             stats={stats} 
-            onNavigateDoubtSolver={() => handleNavigate('doubt-solver')}
             onNavigateStudentHub={() => handleNavigate('student-hub')}
             onOpenProfile={() => setIsProfileOpen(true)}
           />
@@ -121,32 +116,18 @@ export default function App() {
             currentUser={currentUser}
             onOpenAuth={handleOpenAuth}
             onOpenProfile={() => setIsProfileOpen(true)}
+            onLogout={handleLogout}
           />
-        )}
-
-        {currentView === 'doubt-solver' && (
-          <DoubtSolverView 
-            currentUser={currentUser} 
-            onOpenAuth={handleOpenAuth} 
-          />
-        )}
-
-        {currentView === 'chat' && (
-          <FullChatView currentUser={currentUser} />
         )}
 
         {currentView === 'admin' && (
-          <AdminView currentUser={currentUser} onOpenAuth={handleOpenAuth} />
+          <AdminView 
+            currentUser={currentUser} 
+            onOpenAuth={handleOpenAuth} 
+            onLogout={handleLogout}
+          />
         )}
       </main>
-
-      {/* Floating RAG Chatbot Widget (Guarded with auth) */}
-      <ChatWidget 
-        activeQuery={activeQuery} 
-        setActiveQuery={setActiveQuery}
-        currentUser={currentUser}
-        onOpenAuth={handleOpenAuth}
-      />
 
       {/* Authentication Modal with Role Selector */}
       <AuthModal
