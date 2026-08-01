@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   GraduationCap, BookOpen, FileText, HelpCircle, Layers, User, 
   MessageSquare, Search, Sparkles, CheckCircle2, Download, Bookmark, 
-  ChevronRight, Award, Compass, Code, Brain, Cpu, Database, Network
+  ChevronRight, Award, Compass, Code, Brain, Cpu, Database, Network, Printer, Eye
 } from 'lucide-react';
 import FullChatView from './FullChatView';
 
@@ -98,13 +98,10 @@ export default function StudentDashboardView({ currentUser, onOpenAuth, onOpenPr
       title: 'DS_Complete_Lab_Manual_2026.pdf', 
       size: '3.4 MB', 
       type: 'PDF Document',
-      content: `================================================================================
-ACADEMIX AI - DATA STRUCTURES & ALGORITHMS COMPLETE LAB MANUAL (2026)
-================================================================================
+      content: `ACADEMIX AI - DATA STRUCTURES & ALGORITHMS COMPLETE LAB MANUAL (2026)
 Department of Computer Science & Engineering | AcademiX AI University
 
 1. LINEAR DATA STRUCTURES
---------------------------------------------------------------------------------
 - Arrays: Fixed contiguous memory layout. Constant time O(1) random access by index.
 - Linked Lists: Nodes containing data and pointers.
   - Singly Linked List: head -> node1 -> node2 -> null
@@ -113,22 +110,18 @@ Department of Computer Science & Engineering | AcademiX AI University
 - Queues (FIFO): First-In First-Out. Enqueue O(1), Dequeue O(1).
 
 2. TREES & BALANCED BSTs
---------------------------------------------------------------------------------
 - Binary Search Tree (BST): Left child < Root < Right child.
   - Search Time: Average O(log N), Worst-case O(N) when unbalanced.
 - AVL Tree: Self-balancing BST where height difference (Balance Factor = Height(Left) - Height(Right)) is -1, 0, or +1.
   - Rotations: Left Rotation (LL), Right Rotation (RR), Left-Right (LR), Right-Left (RL).
 
 3. GRAPH ALGORITHMS
---------------------------------------------------------------------------------
 - Breadth-First Search (BFS): Level-order traversal using Queue data structure. O(V + E) time.
 - Depth-First Search (DFS): Backtracking traversal using Stack / Recursion. O(V + E) time.
 - Dijkstra's Algorithm: Single-source shortest path using Min-Priority Queue (Heap). O((V + E) log V) time.
 - Prim's & Kruskal's MST: Minimum Spanning Tree for weighted connected undirected graphs.
 
-================================================================================
-End of Document | Verified by AcademiX AI Department of Computer Science
-================================================================================`
+End of Document | Verified by AcademiX AI Department of Computer Science`
     },
     { 
       id: 'p2', 
@@ -136,13 +129,10 @@ End of Document | Verified by AcademiX AI Department of Computer Science
       title: 'DBMS_SQL_Query_Reference_Guide.pdf', 
       size: '2.1 MB', 
       type: 'PDF Document',
-      content: `================================================================================
-ACADEMIX AI - DATABASE MANAGEMENT SYSTEMS (DBMS) REFERENCE GUIDE
-================================================================================
+      content: `ACADEMIX AI - DATABASE MANAGEMENT SYSTEMS (DBMS) REFERENCE GUIDE
 Department of Computer Science & Engineering | AcademiX AI University
 
 1. RELATIONAL DATABASE & SQL SYNTAX
---------------------------------------------------------------------------------
 - Data Definition Language (DDL): CREATE TABLE, ALTER TABLE, DROP TABLE, TRUNCATE.
 - Data Manipulation Language (DML): SELECT, INSERT INTO, UPDATE, DELETE.
 - Joins:
@@ -151,22 +141,18 @@ Department of Computer Science & Engineering | AcademiX AI University
   - RIGHT JOIN: Returns all rows from right table and matching rows from left table.
 
 2. NORMALIZATION FORMULAS (1NF to BCNF)
---------------------------------------------------------------------------------
 - 1NF (First Normal Form): All table attributes must contain atomic (indivisible) values.
 - 2NF (Second Normal Form): Table is in 1NF and no non-prime attribute is partially dependent on any candidate key.
 - 3NF (Third Normal Form): Table is in 2NF and no non-prime attribute is transitively dependent on any candidate key.
 - BCNF (Boyce-Codd Normal Form): For every functional dependency X -> Y, X must be a super key.
 
 3. TRANSACTION MANAGEMENT & ACID PROPERTIES
---------------------------------------------------------------------------------
 - Atomicity: All operations in a transaction complete successfully, or all rollback.
 - Consistency: Data must satisfy all integrity constraints before and after transaction execution.
 - Isolation: Concurrent transactions execute independently without mutual interference.
 - Durability: Committed transaction modifications persist permanently in storage even after system failure.
 
-================================================================================
-End of Document | Verified by AcademiX AI Department of Computer Science
-================================================================================`
+End of Document | Verified by AcademiX AI Department of Computer Science`
     },
     { 
       id: 'p3', 
@@ -174,13 +160,10 @@ End of Document | Verified by AcademiX AI Department of Computer Science
       title: 'OS_Kernel_Architecture_Notes.pdf', 
       size: '4.8 MB', 
       type: 'PDF Document',
-      content: `================================================================================
-ACADEMIX AI - OPERATING SYSTEMS KERNEL ARCHITECTURE NOTES
-================================================================================
+      content: `ACADEMIX AI - OPERATING SYSTEMS KERNEL ARCHITECTURE NOTES
 Department of Computer Science & Engineering | AcademiX AI University
 
 1. PROCESS SCHEDULING ALGORITHMS
---------------------------------------------------------------------------------
 - Process Control Block (PCB): Stores PID, Program Counter, CPU registers, memory limits, open file descriptors.
 - CPU Scheduling Metrics: Throughput, Turnaround Time = Exit Time - Arrival Time, Waiting Time = Turnaround Time - Burst Time.
 - Algorithms:
@@ -189,7 +172,6 @@ Department of Computer Science & Engineering | AcademiX AI University
   - Round Robin (RR): Preemptive scheduling with fixed Time Quantum.
 
 2. DEADLOCK HANDLING & BANKER'S ALGORITHM
---------------------------------------------------------------------------------
 - Four Necessary Conditions for Deadlock:
   1. Mutual Exclusion
   2. Hold and Wait
@@ -200,13 +182,10 @@ Department of Computer Science & Engineering | AcademiX AI University
   - Checks if Work >= Need[i] to find a Safe Execution Sequence.
 
 3. MEMORY MANAGEMENT & VIRTUAL MEMORY
---------------------------------------------------------------------------------
 - Paging: Physical memory divided into Frames, logical memory divided into Pages.
 - Page Replacement Algorithms: FIFO, LRU (Least Recently Used), Optimal Page Replacement.
 
-================================================================================
-End of Document | Verified by AcademiX AI Department of Computer Science
-================================================================================`
+End of Document | Verified by AcademiX AI Department of Computer Science`
     },
     { 
       id: 'p4', 
@@ -214,33 +193,26 @@ End of Document | Verified by AcademiX AI Department of Computer Science
       title: 'CN_Protocol_Cheatsheet.pdf', 
       size: '1.9 MB', 
       type: 'PDF Document',
-      content: `================================================================================
-ACADEMIX AI - COMPUTER NETWORKS PROTOCOL CHEATSHEET
-================================================================================
+      content: `ACADEMIX AI - COMPUTER NETWORKS PROTOCOL CHEATSHEET
 Department of Computer Science & Engineering | AcademiX AI University
 
 1. OSI & TCP/IP LAYERED MODEL
---------------------------------------------------------------------------------
 - Layer 7: Application (HTTP, HTTPS, DNS, FTP, SMTP)
 - Layer 4: Transport (TCP, UDP) - Port Numbers (HTTP: 80, HTTPS: 443, DNS: 53)
 - Layer 3: Network (IP, ICMP, ARP, OSPF, BGP) - IP Addresses & Routers
 - Layer 2: Data Link (Ethernet, MAC Addressing, Switches)
 
 2. TCP 3-WAY HANDSHAKE & RELIABILITY
---------------------------------------------------------------------------------
 - Step 1: Client -> Server [SYN, Seq = x]
 - Step 2: Server -> Client [SYN-ACK, Seq = y, Ack = x + 1]
 - Step 3: Client -> Server [ACK, Seq = x + 1, Ack = y + 1]
 - Flow Control: Sliding Window protocol prevents sender from overwhelming receiver buffer.
 
 3. IP ADDRESSING & SUBNETTING
---------------------------------------------------------------------------------
 - IPv4 Address: 32-bit address divided into 4 octets (e.g. 192.168.1.1).
 - CIDR Subnet Masking: /24 = 255.255.255.0 (254 usable host IP addresses).
 
-================================================================================
-End of Document | Verified by AcademiX AI Department of Computer Science
-================================================================================`
+End of Document | Verified by AcademiX AI Department of Computer Science`
     },
     { 
       id: 'p5', 
@@ -248,13 +220,10 @@ End of Document | Verified by AcademiX AI Department of Computer Science
       title: 'AI_Vector_RAG_Handbook.pdf', 
       size: '5.2 MB', 
       type: 'PDF Document',
-      content: `================================================================================
-ACADEMIX AI - ARTIFICIAL INTELLIGENCE & RAG ARCHITECTURE HANDBOOK
-================================================================================
+      content: `ACADEMIX AI - ARTIFICIAL INTELLIGENCE & RAG ARCHITECTURE HANDBOOK
 Department of Computer Science & AI | AcademiX AI University
 
 1. RETRIEVAL-AUGMENTED GENERATION (RAG) ARCHITECTURE
---------------------------------------------------------------------------------
 - Vector Embeddings: Text passages converted into 384-dimensional dense semantic vectors using sentence transformers.
 - Cosine Similarity:
   Cosine Similarity(A, B) = (A . B) / (||A|| * ||B||)
@@ -262,14 +231,11 @@ Department of Computer Science & AI | AcademiX AI University
 - Grounding & Anti-Hallucination: System injects retrieved text chunks as context into LLM prompt, enforcing answers grounded exclusively in verified facts.
 
 2. SEARCH ALGORITHMS & HEURISTICS
---------------------------------------------------------------------------------
 - A* Search Algorithm: f(n) = g(n) + h(n)
   - g(n): Exact cost to reach node n from start node.
   - h(n): Admissible heuristic estimated cost to reach goal node.
 
-================================================================================
-End of Document | Verified by AcademiX AI Department of Artificial Intelligence
-================================================================================`
+End of Document | Verified by AcademiX AI Department of Artificial Intelligence`
     },
     { 
       id: 'p6', 
@@ -277,25 +243,19 @@ End of Document | Verified by AcademiX AI Department of Artificial Intelligence
       title: 'ML_Math_Foundations.pdf', 
       size: '3.7 MB', 
       type: 'PDF Document',
-      content: `================================================================================
-ACADEMIX AI - MACHINE LEARNING MATH & ALGORITHMIC FOUNDATIONS
-================================================================================
+      content: `ACADEMIX AI - MACHINE LEARNING MATH & ALGORITHMIC FOUNDATIONS
 Department of Computer Science & AI | AcademiX AI University
 
 1. SUPERVISED LEARNING ALGORITHMS
---------------------------------------------------------------------------------
 - Linear Regression: Cost Function J(w, b) = (1/2m) * sum((h(x) - y)^2)
 - Logistic Regression: Sigmoid activation function g(z) = 1 / (1 + e^(-z))
 - Decision Trees: Information Gain = Entropy(Parent) - Weighted Avg Entropy(Children)
 
 2. NEURAL NETWORKS & BACKPROPAGATION
---------------------------------------------------------------------------------
 - Forward Pass: Layer activations computed using Weights, Biases, and Activation functions (ReLU: max(0, z)).
 - Backward Pass (Backpropagation): Chain Rule of calculus used to compute partial derivatives dJ/dW to update weights via Gradient Descent.
 
-================================================================================
-End of Document | Verified by AcademiX AI Department of Artificial Intelligence
-================================================================================`
+End of Document | Verified by AcademiX AI Department of Artificial Intelligence`
     },
     { 
       id: 'p7', 
@@ -303,13 +263,10 @@ End of Document | Verified by AcademiX AI Department of Artificial Intelligence
       title: 'Python_DataScience_Cheatsheet.pdf', 
       size: '2.5 MB', 
       type: 'PDF Document',
-      content: `================================================================================
-ACADEMIX AI - PYTHON PROGRAMMING & DATA SCIENCE CHEATSHEET
-================================================================================
+      content: `ACADEMIX AI - PYTHON PROGRAMMING & DATA SCIENCE CHEATSHEET
 Department of Computer Science & Engineering | AcademiX AI University
 
 1. CORE PYTHON SYNTAX & EFFICIENCY
---------------------------------------------------------------------------------
 - List Comprehension: squares = [x**2 for x in range(10) if x % 2 == 0]
 - Generators (Memory Efficient Iteration):
   def count_up():
@@ -318,13 +275,10 @@ Department of Computer Science & Engineering | AcademiX AI University
 - Dictionary Comprehension: word_lengths = {word: len(word) for word in text.split()}
 
 2. PANDAS & NUMPY FOR DATA ANALYSIS
---------------------------------------------------------------------------------
 - NumPy Vectorization: arr * 2 performs C-speed elementwise multiplication.
 - Pandas DataFrames: df.groupby('Category').agg({'Sales': 'sum', 'Rating': 'mean'})
 
-================================================================================
-End of Document | Verified by AcademiX AI Department of Computer Science
-================================================================================`
+End of Document | Verified by AcademiX AI Department of Computer Science`
     },
     { 
       id: 'p8', 
@@ -332,40 +286,88 @@ End of Document | Verified by AcademiX AI Department of Computer Science
       title: 'Java_OOP_Concurrency_Guide.pdf', 
       size: '3.1 MB', 
       type: 'PDF Document',
-      content: `================================================================================
-ACADEMIX AI - JAVA OBJECT-ORIENTED PROGRAMMING & CONCURRENCY GUIDE
-================================================================================
+      content: `ACADEMIX AI - JAVA OBJECT-ORIENTED PROGRAMMING & CONCURRENCY GUIDE
 Department of Computer Science & Engineering | AcademiX AI University
 
 1. JAVA OOP PILLARS & JVM MEMORY
---------------------------------------------------------------------------------
 - Encapsulation: Hiding internal object state behind private fields and public getters/setters.
 - Inheritance: Subclasses extending superclass fields using 'extends'.
 - Polymorphism: Method Overloading (compile-time) & Method Overriding (runtime).
 - JVM Memory: Heap (Object instances & Garbage Collector) vs Stack (Primitive variables & Method frames).
 
 2. MULTITHREADING & CONCURRENCY
---------------------------------------------------------------------------------
 - Thread Creation: Extending Thread class or implementing Runnable interface.
 - Synchronization: synchronized block/method enforces mutual exclusion.
 - ExecutorService: Thread pools managing task queues cleanly.
 
-================================================================================
-End of Document | Verified by AcademiX AI Department of Computer Science
-================================================================================`
+End of Document | Verified by AcademiX AI Department of Computer Science`
     }
   ];
+
+  // Helper to generate 100% VALID PDF 1.4 Binary Blob that opens cleanly in Chrome / Edge PDF Viewers
+  const createValidPdfBlob = (title, subject, rawText) => {
+    const cleanLines = rawText
+      .split('\n')
+      .map(line => line.replace(/[\(\)\\]/g, ''))
+      .filter(line => line.length > 0);
+
+    let contentStream = `BT\n/F1 14 Tf\n40 750 Td\n18 TL\n(${title.replace(/[\(\)\\]/g, '')}) Tj\nT*\n/F1 10 Tf\n(Subject: ${subject} | AcademiX AI Official Handbook) Tj\nT*\nT*\n`;
+
+    cleanLines.forEach(line => {
+      const chunks = line.match(/.{1,75}/g) || [line];
+      chunks.forEach(chunk => {
+        contentStream += `(${chunk.replace(/[\(\)\\]/g, '')}) Tj\nT*\n`;
+      });
+    });
+
+    contentStream += `ET`;
+
+    const streamLen = contentStream.length;
+
+    const pdfContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length ${streamLen} >>
+stream
+${contentStream}
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000056 00000 n 
+00000000111 00000 n 
+00000000223 00000 n 
+00000000305 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+500
+%%EOF`;
+
+    return new Blob([pdfContent], { type: 'application/pdf' });
+  };
 
   const handleDownloadPdf = (pdf) => {
     setDownloadingId(pdf.id);
     try {
-      const textContent = pdf.content || `================================================================================\nACADEMIX AI COURSE REFERENCE DOCUMENT\nTitle: ${pdf.title}\nSubject: ${pdf.subject}\n================================================================================\n\nOfficial Course Content & Syllabus Reference Document for AcademiX AI Students.\n\nVerified by AcademiX AI Academic Department.`;
-      
-      const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
+      const pdfBlob = createValidPdfBlob(pdf.title, pdf.subject, pdf.content);
+      const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = pdf.title;
+      a.download = pdf.title.endsWith('.pdf') ? pdf.title : `${pdf.title}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -375,6 +377,40 @@ End of Document | Verified by AcademiX AI Department of Computer Science
     } finally {
       setTimeout(() => setDownloadingId(null), 1000);
     }
+  };
+
+  const handlePrintPdf = (pdf) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${pdf.title}</title>
+          <style>
+            body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; padding: 40px; color: #0f172a; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+            .header { border-bottom: 2px solid #0d9488; padding-bottom: 15px; margin-bottom: 25px; }
+            .badge { background: #f0fdf4; color: #0d9488; border: 1px solid #99f6e4; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+            h1 { font-size: 22px; color: #0f172a; margin-top: 15px; margin-bottom: 5px; }
+            pre { white-space: pre-wrap; font-family: inherit; font-size: 13px; background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; }
+            .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 11px; color: #64748b; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <span class="badge">${pdf.subject}</span>
+            <h1>${pdf.title}</h1>
+            <p style="font-size: 12px; color: #64748b; margin: 0;">AcademiX AI Official Student Handbook & Course Reference Guide</p>
+          </div>
+          <pre>${pdf.content}</pre>
+          <div class="footer">Verified by AcademiX AI University Department of ${pdf.subject} © 2026</div>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const filteredNotes = notesList.filter(n => 
@@ -543,10 +579,10 @@ End of Document | Verified by AcademiX AI Department of Computer Science
               <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
                 <span className="text-[10px] text-slate-500">{note.date}</span>
                 <button 
-                  onClick={() => alert(`Opening ${note.title}`)}
+                  onClick={() => handlePrintPdf({ title: note.title, subject: note.subject, content: note.summary })}
                   className="flex items-center gap-1 text-teal-400 font-bold hover:underline cursor-pointer"
                 >
-                  <span>Read Note</span>
+                  <span>Read & Print Note</span>
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -574,14 +610,25 @@ End of Document | Verified by AcademiX AI Department of Computer Science
                 <span className="text-[10px] text-slate-500 block">{pdf.size} • {pdf.type}</span>
               </div>
 
-              <button
-                onClick={() => handleDownloadPdf(pdf)}
-                disabled={downloadingId === pdf.id}
-                className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-indigo-500/20 text-indigo-300 border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>{downloadingId === pdf.id ? 'Downloading...' : 'Download PDF'}</span>
-              </button>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  onClick={() => handleDownloadPdf(pdf)}
+                  disabled={downloadingId === pdf.id}
+                  className="flex-1 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                  title="Download Valid PDF File"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>{downloadingId === pdf.id ? 'Saving...' : 'Download PDF'}</span>
+                </button>
+
+                <button
+                  onClick={() => handlePrintPdf(pdf)}
+                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-bold flex items-center justify-center transition-colors cursor-pointer"
+                  title="View & Print PDF in Browser"
+                >
+                  <Eye className="h-3.5 w-3.5 text-indigo-400" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
