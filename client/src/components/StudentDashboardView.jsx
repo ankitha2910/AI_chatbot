@@ -283,21 +283,10 @@ startxref
           <span>Handbooks & Course PDFs</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('chatbot')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-            activeTab === 'chatbot' 
-              ? 'bg-gradient-to-r from-teal-500/20 to-indigo-500/20 text-teal-300 border border-teal-500/40' 
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <MessageSquare className="h-4 w-4 text-teal-400" />
-          <span>AI Assistant</span>
-        </button>
+
       </div>
 
       {/* Subject Filter Bar & Search Input */}
-      {activeTab !== 'chatbot' && (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0a0f1d] p-4 rounded-2xl border border-white/10">
           {/* Subject Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
@@ -334,7 +323,6 @@ startxref
             />
           </div>
         </div>
-      )}
 
       {/* TAB 1: Course Notes */}
       {activeTab === 'notes' && (
@@ -447,12 +435,7 @@ startxref
         </>
       )}
 
-      {/* TAB 3: Inline AI Assistant */}
-      {activeTab === 'chatbot' && (
-        <div className="glass-card rounded-3xl border border-white/10 overflow-hidden min-h-[600px]">
-          <FullChatView currentUser={currentUser} />
-        </div>
-      )}
+
 
     </div>
   );
