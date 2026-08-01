@@ -4,7 +4,13 @@ import {
   GraduationCap, BookOpen, Building2, Award, Key 
 } from 'lucide-react';
 
-export default function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSuccess }) {
+export default function AuthModal({ 
+  isOpen, 
+  onClose, 
+  initialMode = 'signup', 
+  customMessage = '', 
+  onAuthSuccess 
+}) {
   const [mode, setMode] = useState(initialMode); // 'signin' | 'signup'
   const [role, setRole] = useState('Student'); // 'Student' | 'Administrator'
   
@@ -103,6 +109,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signup', onA
         >
           <X className="h-5 w-5" />
         </button>
+
+        {/* Custom Notice Message when triggered by auth guard */}
+        {customMessage && (
+          <div className="mb-4 p-3 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-xs text-teal-300 text-center font-medium flex items-center justify-center gap-2">
+            <Sparkles className="h-4 w-4 shrink-0 text-teal-400" />
+            <span>{customMessage}</span>
+          </div>
+        )}
 
         {/* Icon Header */}
         <div className="flex flex-col items-center text-center space-y-2 mb-6">

@@ -22,6 +22,7 @@ export default function App() {
   
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState('signup'); // 'signin' | 'signup'
+  const [authMessage, setAuthMessage] = useState('');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
@@ -37,14 +38,24 @@ export default function App() {
     }
   };
 
-  const handleOpenAuth = (mode = 'signup') => {
+  const handleOpenAuth = (mode = 'signin', customMsg = '') => {
     setAuthMode(mode);
+    setAuthMessage(customMsg || 'Please sign in or create an account as a Student or Administrator to access this feature.');
     setIsAuthOpen(true);
+  };
+
+  const handleNavigate = (view) => {
+    if (view !== 'landing' && !currentUser) {
+      handleOpenAuth('signin', `Please sign in or create an account as a Student or Administrator to access ${view === 'doubt-solver' ? 'Doubt Resolver' : view === 'admin' ? 'Admin Portal' : 'AI Assistant'}.`);
+      return;
+    }
+    setCurrentView(view);
   };
 
   const handleAuthSuccess = (userObj) => {
     setCurrentUser(userObj);
     localStorage.setItem('eduassist_user', JSON.stringify(userObj));
+    setAuthMessage('');
     // Redirect based on account role
     if (userObj.role === 'Administrator') {
       setCurrentView('admin');
@@ -65,11 +76,15 @@ export default function App() {
   };
 
   const handleStartChatWithQuery = (queryText = '') => {
+    if (!currentUser) {
+      handleOpenAuth('signin', 'Please sign in or create an account as a Student or Administrator to ask questions.');
+      return;
+    }
+
     if (queryText) {
       setActiveQuery(queryText);
-    } else {
-      setCurrentView('chat');
     }
+    setCurrentView('chat');
   };
 
   return (
@@ -78,7 +93,7 @@ export default function App() {
       {/* Global Role-Aware Navbar */}
       <Navbar 
         currentView={currentView} 
-        setCurrentView={setCurrentView} 
+        setCurrentView={handleNavigate} 
         stats={stats} 
         currentUser={currentUser}
         onOpenAuth={handleOpenAuth}
@@ -94,7 +109,7 @@ export default function App() {
             onOpenAuth={handleOpenAuth}
             currentUser={currentUser}
             stats={stats} 
-            onNavigateDoubtSolver={() => setCurrentView('doubt-solver')}
+            onNavigateDoubtSolver={() => handleNavigate('doubt-solver')}
             onOpenProfile={() => setIsProfileOpen(true)}
           />
         )}
@@ -115,17 +130,20 @@ export default function App() {
         )}
       </main>
 
-      {/* Always-accessible Floating RAG Chatbot Widget */}
+      {/* Floating RAG Chatbot Widget (Guarded with auth) */}
       <ChatWidget 
         activeQuery={activeQuery} 
-        setActiveQuery={setActiveQuery} 
+        setActiveQuery={setActiveQuery}
+        currentUser={currentUser}
+        onOpenAuth={handleOpenAuth}
       />
 
       {/* Authentication Modal with Role Selector */}
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
+        onClose={() => { setIsAuthOpen(false); setAuthMessage(''); }}
         initialMode={authMode}
+        customMessage={authMessage}
         onAuthSuccess={handleAuthSuccess}
       />
 

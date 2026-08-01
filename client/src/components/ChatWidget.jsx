@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   MessageSquare, X, Send, Sparkles, RefreshCw, Volume2, VolumeX,
-  FileText, ShieldCheck, Zap, Copy, Check, ExternalLink, Minimize2
+  FileText, ShieldCheck, Zap, Copy, Check, ExternalLink, Minimize2, Lock
 } from 'lucide-react';
 import { sendChatMessage, clearChatSession } from '../services/api';
 
-export default function ChatWidget({ activeQuery, setActiveQuery }) {
+export default function ChatWidget({ activeQuery, setActiveQuery, currentUser, onOpenAuth }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -22,6 +22,16 @@ export default function ChatWidget({ activeQuery, setActiveQuery }) {
   const [sessionId] = useState(`widget-${Math.random().toString(36).substring(7)}`);
   
   const messagesEndRef = useRef(null);
+
+  const handleWidgetClick = () => {
+    if (!currentUser) {
+      if (onOpenAuth) {
+        onOpenAuth('signin', 'Please sign in or create an account as a Student or Administrator to access AcademiX AI Assistant.');
+      }
+      return;
+    }
+    setIsOpen(true);
+  };
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
@@ -127,7 +137,7 @@ export default function ChatWidget({ activeQuery, setActiveQuery }) {
       {/* Floating Chat Trigger Button */}
       {!isOpen && (
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={handleWidgetClick}
           className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-full bg-gradient-to-r from-teal-500 to-indigo-600 p-4 text-white shadow-2xl shadow-teal-500/40 transition-all hover:scale-110 hover:shadow-teal-500/60 group"
           title="Open AcademiX RAG Assistant"
         >

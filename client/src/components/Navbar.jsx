@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Sparkles, MessageSquare, Database, Home, LogIn, UserPlus, 
-  LogOut, HelpCircle, GraduationCap, Shield, User
+  LogOut, HelpCircle, GraduationCap, Shield, Lock
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -15,6 +15,14 @@ export default function Navbar({
 }) {
   const isStudent = currentUser?.role === 'Student';
   const isAdmin = currentUser?.role === 'Administrator';
+
+  const handleNavClick = (view) => {
+    if (view !== 'landing' && !currentUser) {
+      onOpenAuth('signin', `Please sign in or create an account as a Student or Administrator to access ${view === 'doubt-solver' ? 'Doubt Resolver' : view === 'admin' ? 'Admin Portal' : 'AI Assistant'}.`);
+      return;
+    }
+    setCurrentView(view);
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050811]/85 backdrop-blur-md">
@@ -42,8 +50,9 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Role-tailored Navigation links */}
+        {/* Navigation links (Guarded by authentication) */}
         <nav className="flex items-center gap-1.5 sm:gap-2">
+          {/* Home tab (Always accessible) */}
           <button
             onClick={() => setCurrentView('landing')}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
@@ -58,33 +67,37 @@ export default function Navbar({
 
           {/* Doubt Resolver tab */}
           <button
-            onClick={() => setCurrentView('doubt-solver')}
+            onClick={() => handleNavClick('doubt-solver')}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
               currentView === 'doubt-solver' 
                 ? 'bg-gradient-to-r from-amber-500/20 to-teal-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/10' 
                 : 'text-slate-300 hover:text-white hover:bg-white/5'
             }`}
+            title={!currentUser ? "Sign in or register as Student / Admin to access" : "Solve Academic Doubts"}
           >
             <HelpCircle className="h-4 w-4 text-amber-400" />
             <span>Doubt Resolver</span>
+            {!currentUser && <Lock className="h-3 w-3 text-slate-400 opacity-60 ml-0.5" />}
           </button>
 
           {/* AI Assistant tab */}
           <button
-            onClick={() => setCurrentView('chat')}
+            onClick={() => handleNavClick('chat')}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
               currentView === 'chat' 
                 ? 'bg-gradient-to-r from-teal-500/20 to-indigo-500/20 text-teal-300 border border-teal-500/40 shadow-sm shadow-teal-500/10' 
                 : 'text-slate-300 hover:text-white hover:bg-white/5'
             }`}
+            title={!currentUser ? "Sign in or register as Student / Admin to access" : "AcademiX AI Assistant"}
           >
             <MessageSquare className="h-4 w-4 text-teal-400" />
             <span>AI Assistant</span>
+            {!currentUser && <Lock className="h-3 w-3 text-slate-400 opacity-60 ml-0.5" />}
           </button>
 
-          {/* Knowledge Admin Tab (Highlighted for Admins) */}
+          {/* Knowledge Admin / Admin Portal Tab */}
           <button
-            onClick={() => setCurrentView('admin')}
+            onClick={() => handleNavClick('admin')}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
               currentView === 'admin' 
                 ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 border border-indigo-500/40' 
@@ -92,15 +105,17 @@ export default function Navbar({
                   ? 'text-indigo-300 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20'
                   : 'text-slate-300 hover:text-white hover:bg-white/5'
             }`}
+            title={!currentUser ? "Sign in as Administrator to access" : "Knowledge Admin Studio"}
           >
             <Database className="h-4 w-4 text-indigo-400" />
             <span>
               {isAdmin ? 'Knowledge Admin Studio' : 'Admin Portal'}
             </span>
+            {!currentUser && <Lock className="h-3 w-3 text-slate-400 opacity-60 ml-0.5" />}
           </button>
         </nav>
 
-        {/* Auth & Role Profile Controls */}
+        {/* Auth / Profile Controls */}
         <div className="flex items-center gap-3">
           {currentUser ? (
             <div className="flex items-center gap-2">
@@ -148,7 +163,7 @@ export default function Navbar({
           ) : (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => onOpenAuth('signin')}
+                onClick={() => onOpenAuth('signin', 'Please sign in or create an account as a Student or Administrator.')}
                 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300 hover:text-white px-3 py-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-all"
               >
                 <LogIn className="h-3.5 w-3.5" />
@@ -156,7 +171,7 @@ export default function Navbar({
               </button>
 
               <button
-                onClick={() => onOpenAuth('signup')}
+                onClick={() => onOpenAuth('signup', 'Please choose Student or Administrator role to create your account.')}
                 className="gradient-btn flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white px-4 py-2.5 rounded-xl shadow-lg shadow-teal-500/10 hover:brightness-110 transition-all cursor-pointer font-heading"
               >
                 <UserPlus className="h-3.5 w-3.5" />
