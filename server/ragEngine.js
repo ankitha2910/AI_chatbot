@@ -33,7 +33,7 @@ export class RAGEngine {
   /**
    * Generates a context-aware RAG response using vector search and session memory
    */
-  static generateResponse({ sessionId, query, topK = 4 }) {
+  static generateResponse({ sessionId, query, topK = 5 }) {
     const startTime = Date.now();
     const history = this.getSessionHistory(sessionId);
 
@@ -42,7 +42,7 @@ export class RAGEngine {
     const topResult = searchResults[0];
 
     // Check if relevant context was found (Hallucination Blocker Threshold)
-    const isGroundingSufficient = topResult && topResult.similarity >= 0.15;
+    const isGroundingSufficient = topResult && topResult.similarity >= 0.22;
 
     // 2. Extract recent user history context (up to last 6 messages)
     const recentHistory = history
@@ -56,11 +56,11 @@ export class RAGEngine {
 
     if (!isGroundingSufficient) {
       // Friendly message when no relevant document exists (Requirement 7)
-      responseText = "No relevant study material found. Please ask the admin to upload the required document.";
+      responseText = "No relevant study material found.";
       citations = [];
     } else {
       // Build response with citations
-      const matchedChunks = searchResults.filter(r => r.similarity >= 0.15);
+      const matchedChunks = searchResults.filter(r => r.similarity >= 0.22);
       
       citations = matchedChunks.map(c => ({
         id: c.id,
@@ -103,120 +103,27 @@ export class RAGEngine {
    * Synthesizes an intelligent, context-grounded response text with document name & page/chunk citations
    */
   static synthesizeAnswer(query, matchedChunks, historyText) {
-    const qLower = query.toLowerCase();
-
-    // Context aggregation
-    const primaryChunk = matchedChunks[0];
-    const secondaryChunk = matchedChunks[1];
-    const docTitle = primaryChunk.docTitle || 'AcademiX Course Document';
-    const pageNum = primaryChunk.chunkIndex || 1;
-
-    let answerBody = '';
-
-    // Educational Query Synthesizer (Data Structures, DBMS, OS, Networks, AI, ML, Python, Java)
-    if (qLower.includes('dsa') || qLower.includes('data structure')) {
-      answerBody = `### 🌲 Data Structures & Algorithms Overview\n\n` +
-        `Here is the educational breakdown retrieved from **${docTitle}** (Section/Page ${pageNum}):\n\n` +
-        `1. **Linear Data Structures**:\n` +
-        `   • **Arrays**: Contiguous memory layout with $O(1)$ random access time.\n` +
-        `   • **Linked Lists**: Dynamic memory nodes connected via pointers (Singly & Doubly Linked Lists).\n` +
-        `   • **Stacks (LIFO)** & **Queues (FIFO)**: Essential linear structures for expression evaluation, recursion, and buffering.\n\n` +
-        `2. **Trees & Balanced BSTs**:\n` +
-        `   • **Binary Search Tree (BST)**: Enforces $Left < Root < Right$. Search time is $O(\\log N)$ on average.\n` +
-        `   • **AVL Trees**: Self-balancing BSTs guaranteeing height balance factor $\\in \\{-1, 0, +1\\}$ via LL, RR, LR, RL rotations.\n\n` +
-        `3. **Graph Algorithms**:\n` +
-        `   • **BFS & DFS**: Breadth-First Search (queue) and Depth-First Search (stack) traversals in $O(V + E)$ time.\n` +
-        `   • **Dijkstra's & Spanning Trees**: Shortest path and Minimum Spanning Tree algorithms (Prim's & Kruskal's).\n\n` +
-        `📄 **Source Document**: *${docTitle}* (Page/Chunk #${pageNum})`;
-
-    } else if (qLower.includes('dbms') || qLower.includes('database')) {
-      answerBody = `### 🗄️ Database Management Systems (DBMS) Overview\n\n` +
-        `Here is the official reference retrieved from **${docTitle}** (Section/Page ${pageNum}):\n\n` +
-        `1. **Relational Model & SQL**:\n` +
-        `   • **DDL & DML**: Commands for schema design (\`CREATE\`, \`ALTER\`) and data querying (\`SELECT\`, \`INNER JOIN\`, \`LEFT JOIN\`).\n` +
-        `   • **Keys & Constraints**: Primary Keys, Foreign Keys, and Candidate Keys ensuring relational integrity.\n\n` +
-        `2. **Normalization (1NF to BCNF)**:\n` +
-        `   • **1NF**: Ensures all attribute values are atomic.\n` +
-        `   • **2NF & 3NF**: Eliminates partial and transitive functional dependencies.\n` +
-        `   • **BCNF**: Strictly enforces that for every dependency $X \\rightarrow Y$, $X$ must be a super key.\n\n` +
-        `3. **ACID Properties**:\n` +
-        `   • **Atomicity**: All-or-nothing execution.\n` +
-        `   • **Consistency**: State transitions preserve all database constraints.\n` +
-        `   • **Isolation**: Concurrent transactions execute independently without interference.\n` +
-        `   • **Durability**: Committed data permanently persists despite power or system failures.\n\n` +
-        `📄 **Source Document**: *${docTitle}* (Page/Chunk #${pageNum})`;
-
-    } else if (qLower.includes('operating system') || qLower.includes('os')) {
-      answerBody = `### ⚙️ Operating Systems (OS) Architecture\n\n` +
-        `Retrieved from **${docTitle}** (Section/Page ${pageNum}):\n\n` +
-        `1. **Process Management & Scheduling**:\n` +
-        `   • **Process Control Block (PCB)**: Stores PID, Program Counter, CPU registers, and memory boundaries.\n` +
-        `   • **CPU Schedulers**: First-Come First-Served (FCFS), Shortest Job First (SJF), and Round Robin (RR) with time quantum.\n\n` +
-        `2. **Deadlock Prevention & Banker's Algorithm**:\n` +
-        `   • **4 Necessary Conditions**: Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait.\n` +
-        `   • **Banker's Safety Algorithm**: Computes $\\text{Need}[i][j] = \\text{Max}[i][j] - \\text{Allocation}[i][j]$ to guarantee a safe execution sequence.\n\n` +
-        `3. **Virtual Memory & Paging**:\n` +
-        `   • **Paging & TLB**: Maps logical pages to physical frames with Translation Lookaside Buffer acceleration.\n` +
-        `   • **Page Replacement**: LRU (Least Recently Used) and FIFO algorithms.\n\n` +
-        `📄 **Source Document**: *${docTitle}* (Page/Chunk #${pageNum})`;
-
-    } else if (qLower.includes('network') || qLower.includes('cn') || qLower.includes('tcp')) {
-      answerBody = `### 🌐 Computer Networks & Protocols\n\n` +
-        `Retrieved from **${docTitle}** (Section/Page ${pageNum}):\n\n` +
-        `1. **OSI & TCP/IP Layered Models**:\n` +
-        `   • Application, Transport (TCP/UDP), Network (IP/Routing), and Data Link (Ethernet/MAC) layers.\n\n` +
-        `2. **TCP 3-Way Handshake**:\n` +
-        `   • Connection establishment sequence: **SYN** $\\rightarrow$ **SYN-ACK** $\\rightarrow$ **ACK**.\n` +
-        `   • Sliding Window protocol ensures reliable flow control.\n\n` +
-        `3. **IP Addressing & Subnetting**:\n` +
-        `   • 32-bit IPv4 addresses with CIDR subnet masks (e.g., \`/24\` subnetting).\n\n` +
-        `📄 **Source Document**: *${docTitle}* (Page/Chunk #${pageNum})`;
-
-    } else if (qLower.includes('artificial intelligence') || qLower.includes('ai') || qLower.includes('rag')) {
-      answerBody = `### 🤖 Artificial Intelligence & RAG Systems\n\n` +
-        `Retrieved from **${docTitle}** (Section/Page ${pageNum}):\n\n` +
-        `1. **Retrieval-Augmented Generation (RAG)**:\n` +
-        `   • **Vector Embeddings**: Dense 384-dim semantic representations.\n` +
-        `   • **Cosine Similarity**: Identifies top matching document chunks.\n` +
-        `   • **Context Grounding**: Constrains LLM generation strictly to retrieved university facts to eliminate hallucinations.\n\n` +
-        `2. **Heuristic Search**:\n` +
-        `   • **A* Search**: Evaluates $f(n) = g(n) + h(n)$ to find optimal paths.\n\n` +
-        `📄 **Source Document**: *${docTitle}* (Page/Chunk #${pageNum})`;
-
-    } else if (qLower.includes('machine learning') || qLower.includes('ml')) {
-      answerBody = `### 🧠 Machine Learning Foundations\n\n` +
-        `Retrieved from **${docTitle}** (Section/Page ${pageNum}):\n\n` +
-        `1. **Supervised Learning**:\n` +
-        `   • **Linear & Logistic Regression**: Continuous predictions and Sigmoid classification $g(z) = \\frac{1}{1 + e^{-z}}$.\n` +
-        `   • **Decision Trees & Random Forests**: Information Gain and ensemble trees.\n\n` +
-        `2. **Neural Networks & Backpropagation**:\n` +
-        `   • **Forward Pass**: Activation functions (ReLU, Sigmoid).\n` +
-        `   • **Backpropagation**: Calculus Chain Rule updating weights via Gradient Descent.\n\n` +
-        `📄 **Source Document**: *${docTitle}* (Page/Chunk #${pageNum})`;
-
-    } else if (qLower.includes('python')) {
-      answerBody = `### 🐍 Python Programming Masterclass\n\n` +
-        `Retrieved from **${docTitle}** (Section/Page ${pageNum}):\n\n` +
-        `• **List Comprehensions**: \`[x**2 for x in range(10) if x % 2 == 0]\`\n` +
-        `• **Generators**: Memory-efficient iteration using the \`yield\` keyword.\n` +
-        `• **Data Science Stack**: NumPy vectorization and Pandas DataFrame data manipulation.\n\n` +
-        `📄 **Source Document**: *${docTitle}* (Page/Chunk #${pageNum})`;
-
-    } else if (qLower.includes('java')) {
-      answerBody = `### ☕ Java Programming & OOP Architecture\n\n` +
-        `Retrieved from **${docTitle}** (Section/Page ${pageNum}):\n\n` +
-        `• **4 OOP Pillars**: Encapsulation, Abstraction, Inheritance, Polymorphism.\n` +
-        `• **JVM Architecture**: Heap vs Stack memory management and JIT compilation.\n` +
-        `• **Multithreading**: Thread synchronization and ExecutorService pools.\n\n` +
-        `📄 **Source Document**: *${docTitle}* (Page/Chunk #${pageNum})`;
-
-    } else {
-      // General synthesis combining top match snippets with document name & page number
-      answerBody = `Based on official university records in **${docTitle}** (Page/Chunk #${pageNum}, ${primaryChunk.matchPercentage}% match confidence):\n\n` +
-        `> "${primaryChunk.content.trim()}"` +
-        (secondaryChunk ? `\n\n**Additional Reference from ${secondaryChunk.docTitle} (Page/Chunk #${secondaryChunk.chunkIndex || 1})**:\n> "${secondaryChunk.content.trim()}"` : '') +
-        `\n\n📄 **Source Document**: *${docTitle}* (Page/Chunk #${pageNum})`;
+    if (!matchedChunks || matchedChunks.length === 0) {
+      return "No relevant study material found.";
     }
+
+    let answerBody = `Based on the official study materials, here is the relevant information for your query:\n\n`;
+    
+    // Add context strictly from top retrieved chunks
+    matchedChunks.slice(0, 3).forEach((chunk) => {
+      answerBody += `> "${chunk.content.trim()}"\n\n`;
+    });
+
+    // Add explicit citations section
+    answerBody += `### Source Documents:\n`;
+    const uniqueDocs = new Set();
+    matchedChunks.forEach(chunk => {
+      const citationId = `📄 **${chunk.docTitle}** (Page #${chunk.chunkIndex || 1})`;
+      if (!uniqueDocs.has(citationId)) {
+        uniqueDocs.add(citationId);
+        answerBody += `- ${citationId} - ${chunk.matchPercentage}% match\n`;
+      }
+    });
 
     return answerBody;
   }

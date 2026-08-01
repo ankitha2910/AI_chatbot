@@ -130,6 +130,106 @@ class VectorStoreEngine {
   }
 
   /**
+   * Splits text into overlapping chunks to preserve context
+   */
+  chunkText(text, maxWords = 350, overlap = 50) {
+    if (!text) return [];
+    const words = text.split(/\s+/);
+    const chunks = [];
+    if (words.length <= maxWords) return [text];
+    
+    for (let i = 0; i < words.length; i += (maxWords - overlap)) {
+      chunks.push(words.slice(i, i + maxWords).join(' '));
+      if (i + maxWords >= words.length) break;
+    }
+    return chunks;
+  }
+
+  /**
+   * Creates a hashed Term Frequency dense vector (simulated embedding)
+   */
+  createVectorEmbedding(text) {
+    const vector = new Array(this.vectorDimension).fill(0);
+    const tokens = this.tokenize(text);
+    tokens.forEach(token => {
+      let hash = 0;
+      for (let i = 0; i < token.length; i++) {
+        hash = ((hash << 5) - hash) + token.charCodeAt(i);
+        hash |= 0;
+      }
+      const index = Math.abs(hash) % this.vectorDimension;
+      vector[index] += 1;
+    });
+    
+    // Normalize vector to unit length
+    const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
+    if (magnitude > 0) {
+      for (let i = 0; i < this.vectorDimension; i++) {
+        vector[i] /= magnitude;
+      }
+    }
+    return vector;
+  }
+
+  /**
+   * Calculates Cosine Similarity between two vectors
+   */
+  cosineSimilarity(vecA, vecB) {
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+    for (let i = 0; i < this.vectorDimension; i++) {
+      dotProduct += vecA[i] * vecB[i];
+      normA += vecA[i] * vecA[i];
+      normB += vecB[i] * vecB[i];
+    }
+    if (normA === 0 || normB === 0) return 0;
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  /**
+   * Reindexes all documents and FAQs into chunks
+   */
+  reindexAll() {
+    this.chunks = [];
+    let chunkIdCounter = 1;
+
+    // Process Documents
+    for (const doc of this.documents) {
+      const textChunks = this.chunkText(doc.content, 400, 50);
+      textChunks.forEach((text, index) => {
+        this.chunks.push({
+          id: `chunk-${chunkIdCounter++}`,
+          docId: doc.id,
+          docTitle: doc.title,
+          category: doc.category,
+          type: 'document',
+          content: text,
+          chunkIndex: index + 1,
+          totalChunks: textChunks.length,
+          vector: this.createVectorEmbedding(text)
+        });
+      });
+    }
+
+    // Process FAQs
+    for (const faq of this.faqs) {
+      const text = `FAQ Question: ${faq.question}\nAnswer: ${faq.answer}`;
+      this.chunks.push({
+        id: `chunk-${chunkIdCounter++}`,
+        docId: faq.id,
+        docTitle: `FAQ: ${faq.question}`,
+        category: faq.category,
+        type: 'faq',
+        content: text,
+        chunkIndex: 1,
+        totalChunks: 1,
+        vector: this.createVectorEmbedding(text)
+      });
+    }
+  }
+
+  /**
    * Syncs initial seed documents and FAQs to Supabase tables if empty
    */
   async syncWithSupabase() {
