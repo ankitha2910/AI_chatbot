@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   HelpCircle, Sparkles, Send, BookOpen, Lightbulb, CheckCircle2, 
-  FileText, ArrowRight, RefreshCw, AlertCircle, Layers, Award, Code, Compass
+  FileText, ArrowRight, RefreshCw, AlertCircle, Layers, Award, Code, Compass,
+  GraduationCap, Shield
 } from 'lucide-react';
 import { sendChatMessage } from '../services/api';
 
@@ -119,6 +120,16 @@ export default function DoubtSolverView({ currentUser, onOpenAuth }) {
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
               Type your academic question, course doubt, or regulation inquiry below. AcademiX retrieves verified facts directly from university records and course documentation.
             </p>
+
+            {currentUser && (
+              <div className="inline-flex items-center gap-2 mt-2 bg-white/5 border border-white/10 px-3 py-1 rounded-xl text-xs text-slate-300">
+                {currentUser.role === 'Student' ? <GraduationCap className="h-4 w-4 text-teal-400" /> : <Shield className="h-4 w-4 text-indigo-400" />}
+                <span className="font-bold text-white">{currentUser.name}</span>
+                <span className="text-slate-400">
+                  • {currentUser.role === 'Student' ? `Roll: ${currentUser.studentId || '2024-CS-108'} (${currentUser.department || 'CSE'})` : `ID: ${currentUser.adminId || 'ADM-4019'} (${currentUser.department || 'Academic Affairs'})`}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3 shrink-0">

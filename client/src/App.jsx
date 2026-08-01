@@ -6,6 +6,7 @@ import DoubtSolverView from './components/DoubtSolverView';
 import AdminView from './components/AdminView';
 import ChatWidget from './components/ChatWidget';
 import AuthModal from './components/AuthModal';
+import UserProfileModal from './components/UserProfileModal';
 import { fetchStats } from './services/api';
 
 export default function App() {
@@ -13,13 +14,15 @@ export default function App() {
   const [activeQuery, setActiveQuery] = useState('');
   const [stats, setStats] = useState(null);
 
-  // Auth State
+  // Auth State with enriched role-specific fields
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('eduassist_user');
     return saved ? JSON.parse(saved) : null;
   });
+  
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState('signup'); // 'signin' | 'signup'
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -42,12 +45,17 @@ export default function App() {
   const handleAuthSuccess = (userObj) => {
     setCurrentUser(userObj);
     localStorage.setItem('eduassist_user', JSON.stringify(userObj));
-    // Redirect to Chatbot Assistant page upon login (or Admin Studio if Administrator)
+    // Redirect based on account role
     if (userObj.role === 'Administrator') {
       setCurrentView('admin');
     } else {
       setCurrentView('chat');
     }
+  };
+
+  const handleUpdateProfile = (updatedUser) => {
+    setCurrentUser(updatedUser);
+    localStorage.setItem('eduassist_user', JSON.stringify(updatedUser));
   };
 
   const handleLogout = () => {
@@ -67,7 +75,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#050811] text-[#f8fafc] flex flex-col font-sans relative selection:bg-teal-500 selection:text-black">
       
-      {/* Global Navbar */}
+      {/* Global Role-Aware Navbar */}
       <Navbar 
         currentView={currentView} 
         setCurrentView={setCurrentView} 
@@ -75,6 +83,7 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={handleOpenAuth}
         onLogout={handleLogout}
+        onOpenProfile={() => setIsProfileOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -86,6 +95,7 @@ export default function App() {
             currentUser={currentUser}
             stats={stats} 
             onNavigateDoubtSolver={() => setCurrentView('doubt-solver')}
+            onOpenProfile={() => setIsProfileOpen(true)}
           />
         )}
 
@@ -111,12 +121,20 @@ export default function App() {
         setActiveQuery={setActiveQuery} 
       />
 
-      {/* Authentication Modal matching screenshot */}
+      {/* Authentication Modal with Role Selector */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         initialMode={authMode}
         onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* User Role Profile Management Modal */}
+      <UserProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        currentUser={currentUser}
+        onUpdateProfile={handleUpdateProfile}
       />
 
     </div>

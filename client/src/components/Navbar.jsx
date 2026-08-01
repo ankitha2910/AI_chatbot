@@ -1,7 +1,21 @@
 import React from 'react';
-import { Sparkles, MessageSquare, Database, ShieldCheck, Home, LogIn, UserPlus, LogOut, User, HelpCircle } from 'lucide-react';
+import { 
+  Sparkles, MessageSquare, Database, Home, LogIn, UserPlus, 
+  LogOut, HelpCircle, GraduationCap, Shield, User
+} from 'lucide-react';
 
-export default function Navbar({ currentView, setCurrentView, stats, currentUser, onOpenAuth, onLogout }) {
+export default function Navbar({ 
+  currentView, 
+  setCurrentView, 
+  stats, 
+  currentUser, 
+  onOpenAuth, 
+  onLogout,
+  onOpenProfile 
+}) {
+  const isStudent = currentUser?.role === 'Student';
+  const isAdmin = currentUser?.role === 'Administrator';
+
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050811]/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -24,12 +38,12 @@ export default function Navbar({ currentView, setCurrentView, stats, currentUser
                 RAG v2.4
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 hidden sm:block">Smart Campus Knowledge & AI Assistant</p>
+            <p className="text-[10px] text-slate-400 hidden sm:block">Smart Campus Knowledge & RAG Engine</p>
           </div>
         </div>
 
-        {/* Navigation buttons */}
-        <nav className="flex items-center gap-2 sm:gap-3">
+        {/* Role-tailored Navigation links */}
+        <nav className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={() => setCurrentView('landing')}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
@@ -42,6 +56,7 @@ export default function Navbar({ currentView, setCurrentView, stats, currentUser
             <span className="hidden sm:inline">Home</span>
           </button>
 
+          {/* Doubt Resolver tab */}
           <button
             onClick={() => setCurrentView('doubt-solver')}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
@@ -54,6 +69,7 @@ export default function Navbar({ currentView, setCurrentView, stats, currentUser
             <span>Doubt Resolver</span>
           </button>
 
+          {/* AI Assistant tab */}
           <button
             onClick={() => setCurrentView('chat')}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
@@ -66,32 +82,61 @@ export default function Navbar({ currentView, setCurrentView, stats, currentUser
             <span>AI Assistant</span>
           </button>
 
+          {/* Knowledge Admin Tab (Highlighted for Admins) */}
           <button
             onClick={() => setCurrentView('admin')}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
               currentView === 'admin' 
                 ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 border border-indigo-500/40' 
-                : 'text-slate-300 hover:text-white hover:bg-white/5'
+                : isAdmin
+                  ? 'text-indigo-300 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
             }`}
           >
             <Database className="h-4 w-4 text-indigo-400" />
-            <span>Knowledge Admin</span>
+            <span>
+              {isAdmin ? 'Knowledge Admin Studio' : 'Admin Portal'}
+            </span>
           </button>
         </nav>
 
-        {/* Auth / Profile Controls */}
+        {/* Auth & Role Profile Controls */}
         <div className="flex items-center gap-3">
           {currentUser ? (
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center gap-2 bg-[#0c111e] border border-white/10 px-3 py-1.5 rounded-xl text-xs">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-teal-500/20 text-teal-300 font-bold text-[10px]">
-                  {currentUser.name.substring(0, 2).toUpperCase()}
+            <div className="flex items-center gap-2">
+              
+              {/* Profile Pill Trigger */}
+              <button
+                onClick={onOpenProfile}
+                className="flex items-center gap-2.5 bg-[#0c111e] hover:bg-white/10 border border-white/15 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer group"
+                title="View & Edit Role Profile"
+              >
+                <div className={`flex h-7 w-7 items-center justify-center rounded-lg font-bold text-xs ${
+                  isAdmin 
+                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' 
+                    : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
+                }`}>
+                  {isAdmin ? <Shield className="h-4 w-4" /> : <GraduationCap className="h-4 w-4" />}
                 </div>
-                <div className="text-left hidden sm:block">
-                  <span className="block font-bold text-white leading-none">{currentUser.name}</span>
-                  <span className="text-[9px] text-teal-400 font-medium">{currentUser.role}</span>
+
+                <div className="text-left hidden md:block">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-white leading-none group-hover:text-teal-300 transition-colors">
+                      {currentUser.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`text-[9px] font-bold ${isAdmin ? 'text-indigo-400' : 'text-teal-400'}`}>
+                      {currentUser.role}
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-mono">
+                      • {isStudent ? (currentUser.studentId || '2024-CS-108') : (currentUser.adminId || 'ADM-4019')}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </button>
+
+              {/* Logout Button */}
               <button
                 onClick={onLogout}
                 className="p-2 text-slate-400 hover:text-red-400 rounded-xl hover:bg-white/10 transition-colors"

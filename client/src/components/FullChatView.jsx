@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Send, Sparkles, RefreshCw, Database, ShieldCheck, 
-  FileText, Copy, Check, Info, Trash2, Cpu, Zap
+  FileText, Copy, Check, Info, Trash2, Cpu, Zap, GraduationCap, Shield
 } from 'lucide-react';
 import { sendChatMessage, clearChatSession } from '../services/api';
 
-export default function FullChatView() {
+export default function FullChatView({ currentUser }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -162,7 +162,14 @@ export default function FullChatView() {
             </div>
             <div>
               <h1 className="text-sm font-bold text-white font-heading">Context-Aware AI Assistant</h1>
-              <p className="text-[10px] text-slate-400">Session ID: {sessionId.substring(0, 16)}...</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] text-slate-400">Session ID: {sessionId.substring(0, 16)}...</p>
+                {currentUser && (
+                  <span className="text-[10px] text-teal-300 bg-teal-500/10 px-2 py-0.5 rounded-full border border-teal-500/20 font-medium">
+                    {currentUser.name} ({currentUser.role === 'Student' ? `Roll: ${currentUser.studentId || '2024-CS-108'}` : `Admin ID: ${currentUser.adminId || 'ADM-4019'}`})
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

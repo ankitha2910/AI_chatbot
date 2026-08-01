@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Database, Upload, Plus, Trash2, Search, FileText, 
-  HelpCircle, RefreshCw, CheckCircle2, AlertCircle, Cpu
+  HelpCircle, RefreshCw, CheckCircle2, AlertCircle, Cpu,
+  Shield, Key, Lock, UserCheck, GraduationCap, ArrowRight
 } from 'lucide-react';
 import { 
   fetchDocuments, uploadDocument, deleteDocument, 
   fetchFaqs, addFaq, deleteFaq, testVectorSearch, fetchStats 
 } from '../services/api';
 
-export default function AdminView() {
+export default function AdminView({ currentUser, onOpenAuth }) {
   const [documents, setDocuments] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [stats, setStats] = useState(null);
@@ -32,6 +33,9 @@ export default function AdminView() {
   const [isTesting, setIsTesting] = useState(false);
 
   const [notification, setNotification] = useState(null);
+
+  const isStudent = currentUser?.role === 'Student';
+  const isAdmin = currentUser?.role === 'Administrator';
 
   useEffect(() => {
     loadData();
@@ -133,19 +137,87 @@ export default function AdminView() {
     }
   };
 
+  // IF LOGGED IN USER IS A STUDENT: Show Access Restricted View
+  if (isStudent) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-[#050811] p-6 lg:p-12 flex items-center justify-center">
+        <div className="max-w-xl w-full glass-card p-8 rounded-3xl border border-amber-500/30 bg-[#0a0f1d]/90 text-center space-y-6 shadow-2xl shadow-amber-500/10">
+          
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 mx-auto">
+            <Lock className="h-8 w-8" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-300">
+              <Shield className="h-3.5 w-3.5" />
+              Administrator Clearance Required
+            </span>
+            <h2 className="text-2xl font-bold text-white font-heading">
+              Knowledge Admin Studio Access Restricted
+            </h2>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Your account is currently registered as a <strong className="text-teal-400">Student</strong> (Roll No: <span className="font-mono text-white">{currentUser.studentId || '2024-CS-108'}</span>). 
+              Knowledge base document ingestion, FAQ indexing, and raw vector store modifications are reserved for Administrator accounts.
+            </p>
+          </div>
+
+          {/* Student details card */}
+          <div className="bg-[#050811]/80 p-4 rounded-2xl border border-white/10 text-left text-xs space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Current Logged-in Credentials:</span>
+            <div className="flex justify-between items-center text-slate-200">
+              <span>Account Role:</span>
+              <span className="font-bold text-teal-400">Student Account</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-200">
+              <span>Department:</span>
+              <span className="font-semibold text-slate-300">{currentUser.department || 'Computer Science & Eng.'}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-200">
+              <span>Semester:</span>
+              <span className="font-semibold text-amber-300">{currentUser.semester || 'Semester 4'}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <button
+              onClick={() => onOpenAuth('signin')}
+              className="gradient-btn py-3 px-6 rounded-xl font-bold text-xs flex items-center justify-center gap-2"
+            >
+              <Shield className="h-4 w-4" />
+              <span>Switch to Administrator Account</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#050811] p-6 lg:p-10 space-y-8">
       
-      {/* Header & Stats Banner */}
+      {/* Header & Stats Banner with Logged-in Administrator Details */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 text-white shadow-md">
               <Database className="h-5 w-5" />
             </div>
-            <h1 className="text-2xl font-bold text-white font-heading">Document Ingestion & Admin Studio</h1>
+            <h1 className="text-2xl font-bold text-white font-heading">Knowledge Ingestion & Admin Studio</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Manage documents, build FAQs, and test vector similarity search in real time.</p>
+          
+          {/* Admin Metadata Credentials Bar */}
+          {currentUser && (
+            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-300">
+              <span className="inline-flex items-center gap-1 font-bold text-indigo-300 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/30">
+                <Shield className="h-3.5 w-3.5 text-indigo-400" />
+                {currentUser.name}
+              </span>
+              <span className="text-slate-400 font-mono">ID: {currentUser.adminId || 'ADM-4019'}</span>
+              <span className="text-slate-400">• Unit: {currentUser.department || 'Academic Affairs'}</span>
+              <span className="text-slate-400">• Designation: {currentUser.designation || 'Chief Registrar'}</span>
+            </div>
+          )}
         </div>
 
         {/* Knowledge Base Stats counter */}
