@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Health Check & Supabase Integration Status
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({
     status: 'ok',
     service: 'AcademiX RAG Engine',
@@ -40,14 +40,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.get('/api/supabase/status', (req, res) => {
+app.get(['/api/supabase/status', '/supabase/status'], (req, res) => {
   res.json(getSupabaseStatus());
 });
 
 // Chat Query Endpoint (RAG + Conversational Memory)
-app.post('/api/chat', (req, res) => {
+app.post(['/api/chat', '/chat'], (req, res) => {
   try {
-    const { query, sessionId = 'default-session', topK = 3 } = req.body;
+    const { query, sessionId = 'default-session', topK = 4 } = req.body;
     
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       return res.status(400).json({ error: 'Query text is required.' });
@@ -56,7 +56,7 @@ app.post('/api/chat', (req, res) => {
     const response = RAGEngine.generateResponse({
       sessionId,
       query: query.trim(),
-      topK: parseInt(topK) || 3
+      topK: parseInt(topK) || 4
     });
 
     res.json(response);
@@ -67,14 +67,14 @@ app.post('/api/chat', (req, res) => {
 });
 
 // Reset Conversational Memory
-app.delete('/api/chat/history/:sessionId', (req, res) => {
+app.delete(['/api/chat/history/:sessionId', '/chat/history/:sessionId'], (req, res) => {
   const { sessionId } = req.params;
   const result = RAGEngine.clearSessionHistory(sessionId);
   res.json(result);
 });
 
 // List All Documents
-app.get('/api/documents', (req, res) => {
+app.get(['/api/documents', '/documents'], (req, res) => {
   res.json({
     documents: vectorStore.documents,
     count: vectorStore.documents.length
@@ -82,7 +82,7 @@ app.get('/api/documents', (req, res) => {
 });
 
 // Ingest / Upload Document (Text or PDF simulation)
-app.post('/api/documents/upload', upload.single('file'), (req, res) => {
+app.post(['/api/documents/upload', '/documents/upload'], upload.single('file'), (req, res) => {
   try {
     const { title, category, textContent } = req.body;
     let finalContent = textContent || '';
@@ -94,7 +94,7 @@ app.post('/api/documents/upload', upload.single('file'), (req, res) => {
         finalContent = fs.readFileSync(filePath, 'utf-8');
       } else {
         // Simple fallback extracted text representation for uploaded documents
-        finalContent = `Extracted Text content from uploaded file: ${req.file.originalname}.\nFile size: ${req.file.size} bytes.\n\n${textContent || 'Document uploaded to EduAssist Knowledge Store.'}`;
+        finalContent = `Extracted Text content from uploaded file: ${req.file.originalname}.\nFile size: ${req.file.size} bytes.\n\n${textContent || 'Document uploaded to AcademiX Knowledge Store.'}`;
       }
     }
 
@@ -120,19 +120,19 @@ app.post('/api/documents/upload', upload.single('file'), (req, res) => {
 });
 
 // Delete Document
-app.delete('/api/documents/:id', (req, res) => {
+app.delete(['/api/documents/:id', '/documents/:id'], (req, res) => {
   const { id } = req.params;
   vectorStore.deleteDocument(id);
   res.json({ message: `Document ${id} deleted and vector store reindexed.`, stats: vectorStore.getStats() });
 });
 
 // List FAQs
-app.get('/api/faqs', (req, res) => {
+app.get(['/api/faqs', '/faqs'], (req, res) => {
   res.json({ faqs: vectorStore.faqs, count: vectorStore.faqs.length });
 });
 
 // Add FAQ
-app.post('/api/faqs', (req, res) => {
+app.post(['/api/faqs', '/faqs'], (req, res) => {
   const { question, answer, category } = req.body;
   if (!question || !answer) {
     return res.status(400).json({ error: 'Both question and answer are required.' });
@@ -142,7 +142,7 @@ app.post('/api/faqs', (req, res) => {
 });
 
 // Delete FAQ
-app.delete('/api/faqs/:id', (req, res) => {
+app.delete(['/api/faqs/:id', '/faqs/:id'], (req, res) => {
   const { id } = req.params;
   vectorStore.deleteFaq(id);
   res.json({ message: `FAQ ${id} removed from vector store.`, stats: vectorStore.getStats() });
