@@ -3,22 +3,18 @@ import {
   Database, Upload, Plus, Trash2, Search, FileText, 
   HelpCircle, RefreshCw, CheckCircle2, AlertCircle, Cpu,
   Shield, Key, Lock, UserCheck, GraduationCap, ArrowRight,
-  Eye, Download, Filter, FileCode, Check, X, Info, LayoutDashboard,
-  Users, BookOpen, BrainCircuit, Bell, LineChart, MessageSquare, Settings
+  Eye, Download, Filter, FileCode, Check, X, Info
 } from 'lucide-react';
 import { 
   fetchDocuments, uploadDocument, deleteDocument, 
   fetchFaqs, addFaq, deleteFaq, fetchStats 
 } from '../services/api';
-import Sidebar from './Sidebar';
 
-export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
-  const [activeTab, setActiveTab] = useState('dashboard'); // New sidebar state
-  const [subTab, setSubTab] = useState('documents'); // For Study Materials (documents vs faqs)
-  
+export default function AdminView({ currentUser, onOpenAuth }) {
   const [documents, setDocuments] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [stats, setStats] = useState(null);
+  const [activeTab, setActiveTab] = useState('documents'); // 'documents' | 'faqs'
 
   // Document Ingestion Form states
   const [docTitle, setDocTitle] = useState('');
@@ -43,16 +39,8 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
 
   const [notification, setNotification] = useState(null);
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'users', label: 'User Management', icon: Users },
-    { id: 'study-materials', label: 'Study Material Management', icon: BookOpen },
-    { id: 'quiz', label: 'Quiz Management', icon: BrainCircuit },
-    { id: 'announcements', label: 'Announcements', icon: Bell },
-    { id: 'analytics', label: 'Analytics', icon: LineChart },
-    { id: 'feedback', label: 'Feedback', icon: MessageSquare },
-    { id: 'settings', label: 'Settings', icon: Settings }
-  ];
+  const isStudent = currentUser?.role === 'Student';
+  const isAdmin = currentUser?.role === 'Administrator';
 
   useEffect(() => {
     loadData();
@@ -115,11 +103,13 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
 
     setSelectedFile(file);
     if (!docTitle) {
+      // Auto fill title from file name
       const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
       setDocTitle(nameWithoutExt.replace(/_/g, ' '));
     }
   };
 
+  // Upload Document Handler with Progress Bar & Duplicate Prevention
   const handleUploadDoc = async (e) => {
     e.preventDefault();
 
@@ -133,6 +123,7 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
       return;
     }
 
+    // Duplicate Check
     const isDuplicate = documents.some(d => 
       d.title.toLowerCase().trim() === docTitle.toLowerCase().trim()
     );
@@ -158,6 +149,7 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
         setProgressStage('Generating 384-dim Dense Vector Embeddings...');
       }, 800);
 
+      // Perform actual upload & indexing
       const res = await uploadDocument(docTitle, docCategory, docContent, selectedFile);
       
       setUploadProgress(100);
@@ -180,6 +172,74 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
     }
   };
 
+  // Download Document Handler
+  const handleDownloadDoc = (doc) => {
+    try {
+      const cleanLines = (doc.content || '')
+        .split('\n')
+        .map(line => line.replace(/[\(\)\\]/g, ''))
+        .filter(line => line.length > 0);
+
+      let contentStream = `BT\n/F1 14 Tf\n40 750 Td\n18 TL\n(${doc.title.replace(/[\(\)\\]/g, '')}) Tj\nT*\n/F1 10 Tf\n(Subject: ${doc.category} | AcademiX AI Official Handbook) Tj\nT*\nT*\n`;
+
+      cleanLines.forEach(line => {
+        const chunks = line.match(/.{1,75}/g) || [line];
+        chunks.forEach(chunk => {
+          contentStream += `(${chunk.replace(/[\(\)\\]/g, '')}) Tj\nT*\n`;
+        });
+      });
+
+      contentStream += `ET`;
+
+      const pdfContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length ${contentStream.length} >>
+stream
+${contentStream}
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000056 00000 n 
+00000000111 00000 n 
+00000000223 00000 n 
+00000000305 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+500
+%%EOF`;
+
+      const pdfBlob = new Blob([pdfContent], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.title.endsWith('.pdf') ? doc.title : `${doc.title}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showNotify('success', `Downloaded "${doc.title}" as PDF.`);
+    } catch (err) {
+      showNotify('error', 'Failed to download document.');
+    }
+  };
+
+  // Delete Document Handler
   const handleDeleteDoc = async (id) => {
     if (window.confirm("Are you sure you want to delete this document from the vector store?")) {
       try {
@@ -192,6 +252,7 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
     }
   };
 
+  // Re-index Document Handler
   const handleReindexDoc = async (doc) => {
     try {
       showNotify('success', `Re-indexing vector embeddings for "${doc.title}"...`);
@@ -203,6 +264,7 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
     }
   };
 
+  // Add FAQ Handler
   const handleAddFaq = async (e) => {
     e.preventDefault();
     if (!faqQuestion.trim() || !faqAnswer.trim()) {
@@ -224,6 +286,7 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
     }
   };
 
+  // Delete FAQ Handler
   const handleDeleteFaq = async (id) => {
     if (window.confirm("Remove this FAQ from vector memory?")) {
       try {
@@ -236,6 +299,23 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
     }
   };
 
+  // Vector Search Testbench Handler
+  const handleRunVectorTest = async (e) => {
+    e.preventDefault();
+    if (!testQuery.trim()) return;
+
+    setIsTesting(true);
+    try {
+      const res = await testVectorSearch(testQuery, 4);
+      setTestResults(res.results || []);
+    } catch (err) {
+      showNotify('error', 'Vector search test failed.');
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  // Filtered documents list
   const filteredDocuments = documents.filter(doc => {
     const matchesSubject = docSubjectFilter === 'All' || doc.category === docSubjectFilter;
     const matchesSearch = !docSearchQuery || 
@@ -245,74 +325,106 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
     return matchesSubject && matchesSearch;
   });
 
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-white/10 pb-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white font-heading">Admin Dashboard</h2>
-          <p className="text-xs text-slate-400 mt-1">High-level overview of AcademiX AI System</p>
+  if (!currentUser) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center space-y-6">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 mx-auto">
+          <Lock className="h-8 w-8" />
         </div>
+        <h2 className="text-2xl font-bold text-white font-heading">Administrator Portal Access</h2>
+        <p className="text-sm text-slate-300 max-w-md mx-auto">
+          Please sign in as an Administrator to access the document ingestion suite and RAG knowledge studio.
+        </p>
+        <button
+          onClick={() => onOpenAuth('signin', 'Sign in as Administrator to access Admin Studio.')}
+          className="gradient-btn px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-white shadow-xl"
+        >
+          Sign In as Administrator
+        </button>
       </div>
-      
-      {stats ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="glass-card p-6 rounded-2xl border border-teal-500/30 space-y-2 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-20"><FileText className="h-16 w-16 text-teal-500" /></div>
-            <span className="text-xs text-slate-400 font-bold uppercase relative z-10">Total Documents</span>
-            <div className="text-4xl font-extrabold text-white relative z-10">{stats.totalDocuments}</div>
-          </div>
-          <div className="glass-card p-6 rounded-2xl border border-indigo-500/30 space-y-2 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-20"><HelpCircle className="h-16 w-16 text-indigo-500" /></div>
-            <span className="text-xs text-slate-400 font-bold uppercase relative z-10">Total FAQs</span>
-            <div className="text-4xl font-extrabold text-white relative z-10">{stats.totalFaqs}</div>
-          </div>
-          <div className="glass-card p-6 rounded-2xl border border-violet-500/30 space-y-2 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-20"><Database className="h-16 w-16 text-violet-500" /></div>
-            <span className="text-xs text-slate-400 font-bold uppercase relative z-10">Vector Chunks</span>
-            <div className="text-4xl font-extrabold text-white relative z-10">{stats.totalVectorChunks}</div>
-          </div>
+    );
+  }
+
+  if (isStudent) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center space-y-6">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 mx-auto">
+          <Shield className="h-8 w-8" />
         </div>
-      ) : (
-        <div className="text-center text-sm text-slate-400">Loading Stats...</div>
+        <h2 className="text-2xl font-bold text-white font-heading">Access Restricted</h2>
+        <p className="text-sm text-slate-300 max-w-md mx-auto">
+          The Admin Knowledge Studio is reserved for Administrator accounts. As a Student, please use the Student Hub or RAG Chatbot.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 min-h-[calc(100vh-4rem)]">
+      
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-300 font-bold text-xs">
+              <Database className="h-4 w-4" />
+            </div>
+            <h1 className="text-2xl font-bold text-white font-heading">Knowledge Admin Studio</h1>
+            <span className="text-xs font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 px-3 py-1 rounded-full">
+              Admin Access
+            </span>
+          </div>
+          <p className="text-xs text-slate-400">
+            Ingest course documents, manage vector embeddings, configure FAQs, and monitor student queries.
+          </p>
+        </div>
+
+        {stats && (
+          <div className="flex items-center gap-4 bg-[#0c111e] border border-white/10 p-3 rounded-2xl">
+            <div className="text-center px-3 border-r border-white/10">
+              <span className="block text-lg font-bold text-teal-400 font-heading">{stats.totalDocuments}</span>
+              <span className="text-[10px] text-slate-400 uppercase">Docs</span>
+            </div>
+            <div className="text-center px-3 border-r border-white/10">
+              <span className="block text-lg font-bold text-indigo-400 font-heading">{stats.totalFaqs}</span>
+              <span className="text-[10px] text-slate-400 uppercase">FAQs</span>
+            </div>
+            <div className="text-center px-3">
+              <span className="block text-lg font-bold text-violet-400 font-heading">{stats.totalVectorChunks}</span>
+              <span className="text-[10px] text-slate-400 uppercase">Chunks</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`p-4 rounded-xl border flex items-center gap-3 text-xs animate-slide-up ${
+          notification.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300'
+        }`}>
+          {notification.type === 'success' ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
+          <span>{notification.message}</span>
+        </div>
       )}
 
-      <div className="glass-card p-6 rounded-2xl border border-white/10 mt-6">
-        <h3 className="text-base font-bold text-white mb-4">Recent System Logs</h3>
-        <div className="space-y-3">
-          <div className="text-xs text-slate-300 border-b border-white/10 pb-2"><span className="text-teal-400">[SYSTEM]</span> Server started on port 5000</div>
-          <div className="text-xs text-slate-300 border-b border-white/10 pb-2"><span className="text-indigo-400">[RAG]</span> Indexed 12 new chunks from User upload</div>
-          <div className="text-xs text-slate-300"><span className="text-emerald-400">[AUTH]</span> Administrator logged in</div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStudyMaterials = () => (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white font-heading">Study Material Management</h2>
-          <p className="text-xs text-slate-400 mt-1">Ingest course documents and manage FAQs</p>
-        </div>
-      </div>
-
+      {/* Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-white/10 pb-2 overflow-x-auto">
         <button
-          onClick={() => setSubTab('documents')}
+          onClick={() => setActiveTab('documents')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-            subTab === 'documents' 
+            activeTab === 'documents' 
               ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40' 
               : 'text-slate-400 hover:text-white hover:bg-white/5'
           }`}
         >
           <Upload className="h-4 w-4 text-teal-400" />
-          <span>Ingest Documents ({documents.length})</span>
+          <span>Upload & Ingest Documents ({documents.length})</span>
         </button>
 
         <button
-          onClick={() => setSubTab('faqs')}
+          onClick={() => setActiveTab('faqs')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-            subTab === 'faqs' 
+            activeTab === 'faqs' 
               ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' 
               : 'text-slate-400 hover:text-white hover:bg-white/5'
           }`}
@@ -322,8 +434,11 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
         </button>
       </div>
 
-      {subTab === 'documents' && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      {/* TAB 1: Document Ingestion Suite */}
+      {activeTab === 'documents' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Document Ingestion Form */}
           <div className="glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
             <h2 className="text-base font-bold text-white flex items-center gap-2 font-heading">
               <Upload className="h-4 w-4 text-teal-400" />
@@ -337,7 +452,7 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
                   type="text"
                   value={docTitle}
                   onChange={(e) => setDocTitle(e.target.value)}
-                  placeholder="e.g. DSA Lab Manual"
+                  placeholder="e.g. Data Structures & Algorithms Lab Manual"
                   className="w-full rounded-xl border border-white/10 bg-[#0d1424] px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
                 />
               </div>
@@ -349,19 +464,22 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
                   onChange={(e) => setDocCategory(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-[#0d1424] px-3.5 py-2.5 text-white focus:border-teal-500 focus:outline-none"
                 >
-                  <option value="Data Structures">Data Structures</option>
-                  <option value="DBMS">DBMS</option>
-                  <option value="Operating Systems">Operating Systems</option>
-                  <option value="Computer Networks">Computer Networks</option>
-                  <option value="Artificial Intelligence">AI</option>
-                  <option value="Machine Learning">Machine Learning</option>
-                  <option value="Python">Python</option>
-                  <option value="Java">Java</option>
+                  <option value="Data Structures">Data Structures & Algorithms (DSA)</option>
+                  <option value="DBMS">Database Management Systems (DBMS)</option>
+                  <option value="Operating Systems">Operating Systems (OS)</option>
+                  <option value="Computer Networks">Computer Networks (CN)</option>
+                  <option value="Artificial Intelligence">Artificial Intelligence (AI)</option>
+                  <option value="Machine Learning">Machine Learning (ML)</option>
+                  <option value="Python">Python Programming</option>
+                  <option value="Java">Java Programming</option>
+                  <option value="Academic Policy">Academic Policy</option>
+                  <option value="Career & Placements">Career & Placements</option>
                 </select>
               </div>
 
+              {/* Drag & Drop File Area */}
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Upload File</label>
+                <label className="block text-slate-300 font-semibold mb-1">Upload File (.pdf, .docx, .txt, .md)</label>
                 <div
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -390,8 +508,8 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
                       </div>
                     ) : (
                       <div>
-                        <span className="text-slate-300 font-semibold block text-xs">Drag & Drop file here</span>
-                        <span className="text-[10px] text-slate-500">or click to browse (Max 20MB)</span>
+                        <span className="text-slate-300 font-semibold block text-xs">Drag & Drop PDF/DOCX/TXT file here</span>
+                        <span className="text-[10px] text-slate-500">or click to browse from device (Max 20MB)</span>
                       </div>
                     )}
                   </label>
@@ -404,11 +522,12 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
                   rows={4}
                   value={docContent}
                   onChange={(e) => setDocContent(e.target.value)}
-                  placeholder="Paste text content..."
+                  placeholder="Paste syllabus details, notes, or handbook guidelines..."
                   className="w-full rounded-xl border border-white/10 bg-[#0d1424] p-3 text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none font-mono text-[11px]"
                 />
               </div>
 
+              {/* Upload Progress Bar */}
               {isUploading && (
                 <div className="space-y-1.5 p-3 rounded-xl bg-teal-950/40 border border-teal-500/30">
                   <div className="flex justify-between items-center text-[10px] font-bold text-teal-300">
@@ -430,12 +549,15 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
                 className="gradient-btn w-full py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
               >
                 {isUploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                <span>{isUploading ? 'Ingesting Document...' : 'Index into Vector Store'}</span>
+                <span>{isUploading ? 'Ingesting Document...' : 'Chunk & Index into Vector Store'}</span>
               </button>
             </form>
           </div>
 
-          <div className="xl:col-span-2 space-y-4">
+          {/* Ingested Documents List with Search & Filter */}
+          <div className="lg:col-span-2 space-y-4">
+            
+            {/* Search & Subject Filter Bar */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-[#0a0f1d] p-3 rounded-2xl border border-white/10">
               <div className="relative flex-1 w-full">
                 <Search className="h-3.5 w-3.5 absolute left-3 top-3 text-slate-500" />
@@ -447,6 +569,7 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
                   className="w-full rounded-xl border border-white/10 bg-[#050811] pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-teal-500"
                 />
               </div>
+
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Filter className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 <select
@@ -458,13 +581,17 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
                   <option value="Data Structures">Data Structures</option>
                   <option value="DBMS">DBMS</option>
                   <option value="Operating Systems">Operating Systems</option>
-                  <option value="Computer Networks">Networks</option>
-                  <option value="Artificial Intelligence">AI</option>
+                  <option value="Computer Networks">Computer Networks</option>
+                  <option value="Artificial Intelligence">Artificial Intelligence</option>
                   <option value="Machine Learning">Machine Learning</option>
+                  <option value="Python">Python</option>
+                  <option value="Java">Java</option>
+                  <option value="Academic Policy">Academic Policy</option>
                 </select>
               </div>
             </div>
 
+            {/* Document Cards List */}
             <div className="space-y-3">
               {filteredDocuments.map((doc) => (
                 <div key={doc.id} className="glass-card p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row justify-between sm:items-center gap-3 hover:border-teal-500/30 transition-all">
@@ -476,26 +603,67 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 line-clamp-2">{doc.content}</p>
+                    <div className="flex items-center gap-3 text-[10px] text-slate-500">
+                      <span>Uploaded: {new Date(doc.uploadedAt || Date.now()).toLocaleDateString()}</span>
+                      <span>•</span>
+                      <span>By: {currentUser?.name || 'Administrator'}</span>
+                    </div>
                   </div>
+
+                  {/* Actions */}
                   <div className="flex items-center gap-1.5 self-end sm:self-center">
-                    <button onClick={() => setViewingDoc(doc)} className="p-2 text-slate-300 hover:text-teal-300 rounded-lg hover:bg-white/10 transition-colors" title="View Full Document"><Eye className="h-4 w-4" /></button>
-                    <button onClick={() => handleReindexDoc(doc)} className="p-2 text-slate-300 hover:text-indigo-300 rounded-lg hover:bg-white/10 transition-colors" title="Re-index"><RefreshCw className="h-4 w-4" /></button>
-                    <button onClick={() => handleDeleteDoc(doc.id)} className="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-white/10 transition-colors" title="Delete Document"><Trash2 className="h-4 w-4" /></button>
+                    <button
+                      onClick={() => handleDownloadDoc(doc)}
+                      className="p-2 text-slate-300 hover:text-emerald-300 rounded-lg hover:bg-white/10 transition-colors"
+                      title="Download Document as PDF"
+                    >
+                      <Download className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      onClick={() => setViewingDoc(doc)}
+                      className="p-2 text-slate-300 hover:text-teal-300 rounded-lg hover:bg-white/10 transition-colors"
+                      title="View Full Document Content"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleReindexDoc(doc)}
+                      className="p-2 text-slate-300 hover:text-indigo-300 rounded-lg hover:bg-white/10 transition-colors"
+                      title="Re-index Vector Embeddings"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteDoc(doc.id)}
+                      className="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-white/10 transition-colors"
+                      title="Delete Document"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
+
           </div>
+
         </div>
       )}
 
-      {subTab === 'faqs' && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      {/* TAB 2: Structured FAQs */}
+      {activeTab === 'faqs' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Add FAQ Form */}
           <div className="glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
             <h2 className="text-base font-bold text-white flex items-center gap-2 font-heading">
               <Plus className="h-4 w-4 text-indigo-400" />
-              Add FAQ
+              Add Structured FAQ
             </h2>
+
             <form onSubmit={handleAddFaq} className="space-y-4 text-xs">
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Question</label>
@@ -503,9 +671,11 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
                   type="text"
                   value={faqQuestion}
                   onChange={(e) => setFaqQuestion(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-[#0d1424] px-3.5 py-2.5 text-white focus:border-indigo-500 focus:outline-none"
+                  placeholder="e.g. What is the difference between BFS and DFS?"
+                  className="w-full rounded-xl border border-white/10 bg-[#0d1424] px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
                 />
               </div>
+
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Category</label>
                 <select
@@ -516,123 +686,97 @@ export default function AdminView({ currentUser, onOpenAuth, onLogout }) {
                   <option value="Data Structures">Data Structures</option>
                   <option value="DBMS">DBMS</option>
                   <option value="Operating Systems">Operating Systems</option>
-                  <option value="Computer Networks">Networks</option>
-                  <option value="Artificial Intelligence">AI</option>
+                  <option value="Computer Networks">Computer Networks</option>
+                  <option value="Artificial Intelligence">Artificial Intelligence</option>
                   <option value="Machine Learning">Machine Learning</option>
+                  <option value="Academic Policy">Academic Policy</option>
+                  <option value="Career & Placements">Career & Placements</option>
                 </select>
               </div>
+
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Answer</label>
                 <textarea
                   rows={4}
                   value={faqAnswer}
                   onChange={(e) => setFaqAnswer(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-[#0d1424] p-3 text-white focus:border-indigo-500 focus:outline-none text-xs"
+                  placeholder="Provide precise answer to be indexed into vector store..."
+                  className="w-full rounded-xl border border-white/10 bg-[#0d1424] p-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none text-xs"
                 />
               </div>
-              <button type="submit" disabled={isSubmittingFaq} className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 font-bold text-white shadow-lg disabled:opacity-50 cursor-pointer">
-                Index FAQ
+
+              <button
+                type="submit"
+                disabled={isSubmittingFaq}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 font-bold text-white shadow-lg disabled:opacity-50 cursor-pointer"
+              >
+                {isSubmittingFaq ? 'Indexing FAQ...' : 'Index FAQ into Vector Store'}
               </button>
             </form>
           </div>
-          <div className="xl:col-span-2 space-y-3">
+
+          {/* FAQs List */}
+          <div className="lg:col-span-2 space-y-3">
             {faqs.map((faq) => (
               <div key={faq.id} className="glass-card p-4 rounded-xl border border-white/10 flex justify-between items-start gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-white">{faq.question}</span>
-                    <span className="text-[10px] bg-teal-500/10 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded-full font-semibold">{faq.category}</span>
+                    <span className="text-[10px] bg-teal-500/10 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded-full font-semibold">
+                      {faq.category}
+                    </span>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed">{faq.answer}</p>
                 </div>
-                <button onClick={() => handleDeleteFaq(faq.id)} className="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-white/5 transition-colors shrink-0"><Trash2 className="h-4 w-4" /></button>
+
+                <button
+                  onClick={() => handleDeleteFaq(faq.id)}
+                  className="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-white/5 transition-colors shrink-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             ))}
           </div>
+
         </div>
       )}
-    </div>
-  );
 
-  const renderMockSection = (title, icon, subtitle) => {
-    const Icon = icon;
-    return (
-      <div className="space-y-6 text-center py-20 border-t border-white/5">
-        <Icon className="h-16 w-16 text-indigo-400/50 mx-auto" />
-        <h2 className="text-2xl font-bold text-white">{title}</h2>
-        <p className="text-sm text-slate-400 max-w-md mx-auto">{subtitle}</p>
-        <button className="mt-4 px-6 py-2 bg-indigo-500/20 text-indigo-300 rounded-xl font-bold text-xs hover:bg-indigo-500/30 transition-colors border border-indigo-500/30">
-          Create New Entry
-        </button>
-      </div>
-    );
-  };
-
-  if (currentUser?.role !== 'Administrator') {
-    return (
-      <div className="p-20 text-center">
-        <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-white">Access Denied</h2>
-        <p className="text-slate-400 text-sm mt-2">Only Administrators can view this portal.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex h-[calc(100vh-4rem)]">
-      <Sidebar 
-        menuItems={menuItems} 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        currentUser={currentUser} 
-        onLogout={onLogout} 
-      />
-
-      <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gradient-to-br from-[#050811] to-[#0a0d16]">
-        
-        {notification && (
-          <div className={`p-4 mb-6 rounded-xl border flex items-center gap-3 text-xs animate-slide-up ${
-            notification.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300'
-          }`}>
-            {notification.type === 'success' ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
-            <span>{notification.message}</span>
-          </div>
-        )}
-
-        {activeTab === 'dashboard' && renderDashboard()}
-        {activeTab === 'users' && renderMockSection('User Management', Users, 'Manage student and faculty accounts, assign roles, and handle enrollments.')}
-        {activeTab === 'study-materials' && renderStudyMaterials()}
-        {activeTab === 'quiz' && renderMockSection('Quiz Management', BrainCircuit, 'Create and schedule quizzes. AI automatically evaluates student performance.')}
-        {activeTab === 'announcements' && renderMockSection('Announcements', Bell, 'Broadcast important academic updates and campus notifications.')}
-        {activeTab === 'analytics' && renderMockSection('Analytics', LineChart, 'View system usage, AI inference statistics, and platform engagement.')}
-        {activeTab === 'feedback' && renderMockSection('Feedback', MessageSquare, 'Review and respond to feedback submitted by students and faculty.')}
-        {activeTab === 'settings' && renderMockSection('System Settings', Settings, 'Configure global RAG model settings, connection strings, and LLM parameters.')}
-
-        {/* Modal View Full Document Content */}
-        {viewingDoc && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <div className="glass-card max-w-2xl w-full p-6 rounded-3xl border border-white/15 bg-[#080d1a] space-y-4 shadow-2xl">
-              <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                <div>
-                  <h3 className="text-base font-bold text-white">{viewingDoc.title}</h3>
-                  <span className="text-[10px] text-teal-300 bg-teal-500/10 px-2 py-0.5 rounded-md font-semibold">{viewingDoc.category}</span>
-                </div>
-                <button onClick={() => setViewingDoc(null)} className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-white/10">
-                  <X className="h-5 w-5" />
-                </button>
+      {/* Modal View Full Document Content */}
+      {viewingDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="glass-card max-w-2xl w-full p-6 rounded-3xl border border-white/15 bg-[#080d1a] space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white">{viewingDoc.title}</h3>
+                <span className="text-[10px] text-teal-300 bg-teal-500/10 px-2 py-0.5 rounded-md font-semibold">
+                  {viewingDoc.category}
+                </span>
               </div>
-              <div className="max-h-96 overflow-y-auto font-mono text-xs text-slate-300 bg-[#050811] p-4 rounded-xl border border-white/10 leading-relaxed whitespace-pre-wrap">
-                {viewingDoc.content}
-              </div>
-              <div className="flex justify-end pt-2">
-                <button onClick={() => setViewingDoc(null)} className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white">
-                  Close
-                </button>
-              </div>
+              <button
+                onClick={() => setViewingDoc(null)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-white/10"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="max-h-96 overflow-y-auto font-mono text-xs text-slate-300 bg-[#050811] p-4 rounded-xl border border-white/10 leading-relaxed whitespace-pre-wrap">
+              {viewingDoc.content}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setViewingDoc(null)}
+                className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white"
+              >
+                Close Viewer
+              </button>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
+
     </div>
   );
 }
