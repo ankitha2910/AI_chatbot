@@ -172,6 +172,73 @@ export default function AdminView({ currentUser, onOpenAuth }) {
     }
   };
 
+  // Download Document Handler
+  const handleDownloadDoc = (doc) => {
+    try {
+      const cleanLines = (doc.content || '')
+        .split('\n')
+        .map(line => line.replace(/[\(\)\\]/g, ''))
+        .filter(line => line.length > 0);
+
+      let contentStream = `BT\n/F1 14 Tf\n40 750 Td\n18 TL\n(${doc.title.replace(/[\(\)\\]/g, '')}) Tj\nT*\n/F1 10 Tf\n(Subject: ${doc.category} | AcademiX AI Official Handbook) Tj\nT*\nT*\n`;
+
+      cleanLines.forEach(line => {
+        const chunks = line.match(/.{1,75}/g) || [line];
+        chunks.forEach(chunk => {
+          contentStream += `(${chunk.replace(/[\(\)\\]/g, '')}) Tj\nT*\n`;
+        });
+      });
+
+      contentStream += `ET`;
+
+      const pdfContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length ${contentStream.length} >>
+stream
+${contentStream}
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000056 00000 n 
+00000000111 00000 n 
+00000000223 00000 n 
+00000000305 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+500
+%%EOF`;
+
+      const pdfBlob = new Blob([pdfContent], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.title.endsWith('.pdf') ? doc.title : `${doc.title}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showNotify('success', `Downloaded "${doc.title}" as PDF.`);
+    } catch (err) {
+      showNotify('error', 'Failed to download document.');
+    }
+  };
+
   // Delete Document Handler
   const handleDeleteDoc = async (id) => {
     if (window.confirm("Are you sure you want to delete this document from the vector store?")) {
@@ -545,6 +612,14 @@ export default function AdminView({ currentUser, onOpenAuth }) {
 
                   {/* Actions */}
                   <div className="flex items-center gap-1.5 self-end sm:self-center">
+                    <button
+                      onClick={() => handleDownloadDoc(doc)}
+                      className="p-2 text-slate-300 hover:text-emerald-300 rounded-lg hover:bg-white/10 transition-colors"
+                      title="Download Document as PDF"
+                    >
+                      <Download className="h-4 w-4" />
+                    </button>
+
                     <button
                       onClick={() => setViewingDoc(doc)}
                       className="p-2 text-slate-300 hover:text-teal-300 rounded-lg hover:bg-white/10 transition-colors"

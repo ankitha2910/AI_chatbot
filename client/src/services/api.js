@@ -1,4 +1,23 @@
+import { INITIAL_DOCUMENTS, INITIAL_FAQS } from './seedData.js';
+
 const API_BASE = '/api';
+
+// Helper to get local stored documents
+function getLocalDocuments() {
+  const saved = localStorage.getItem('academiX_admin_docs');
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      // fallback
+    }
+  }
+  return INITIAL_DOCUMENTS;
+}
+
+function saveLocalDocuments(docs) {
+  localStorage.setItem('academiX_admin_docs', JSON.stringify(docs));
+}
 
 function generateClientRAGResponse(query, sessionId) {
   const qLower = query.toLowerCase();
@@ -124,10 +143,9 @@ export async function sendChatMessage(query, sessionId = 'default-session', topK
       if (data && data.answer) return data;
     }
   } catch (e) {
-    console.warn("Backend RAG endpoint unavailable, executing seamless client RAG generator fallback:", e.message);
+    console.warn("Backend RAG endpoint unavailable, executing client RAG generator fallback:", e.message);
   }
 
-  // Fail-safe client RAG engine fallback
   return generateClientRAGResponse(query, sessionId);
 }
 
@@ -138,7 +156,7 @@ export async function clearChatSession(sessionId) {
     });
     if (res.ok) return await res.json();
   } catch (e) {
-    // Fail-safe
+    // Fallback
   }
   return { success: true, message: `Session memory for ${sessionId} cleared.` };
 }
@@ -146,14 +164,28 @@ export async function clearChatSession(sessionId) {
 export async function fetchDocuments() {
   try {
     const res = await fetch(`${API_BASE}/documents`);
-    if (res.ok) return await res.json();
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.documents && data.documents.length > 0) {
+        return data;
+      }
+    }
   } catch (e) {
     // Fallback
   }
-  return { documents: [], count: 0 };
+  const localDocs = getLocalDocuments();
+  return { documents: localDocs, count: localDocs.length };
 }
 
 export async function uploadDocument(title, category, textContent, file = null) {
+  const newDoc = {
+    id: `doc-${Date.now()}`,
+    title: title.trim(),
+    category: category || 'General Reference',
+    content: textContent || (file ? `File content uploaded: ${file.name}` : 'Ingested Document Content'),
+    uploadedAt: new Date().toISOString()
+  };
+
   try {
     const formData = new FormData();
     formData.append('title', title);
@@ -167,11 +199,21 @@ export async function uploadDocument(title, category, textContent, file = null) 
       method: 'POST',
       body: formData
     });
-    if (res.ok) return await res.json();
+    if (res.ok) {
+      const data = await res.json();
+      const currentLocals = getLocalDocuments();
+      saveLocalDocuments([data.document || newDoc, ...currentLocals]);
+      return data;
+    }
   } catch (e) {
     // Fallback
   }
-  return { message: 'Document ingested successfully', document: { title, category, content: textContent } };
+
+  const currentLocals = getLocalDocuments();
+  const updatedLocals = [newDoc, ...currentLocals.filter(d => d.title.toLowerCase() !== title.toLowerCase())];
+  saveLocalDocuments(updatedLocals);
+
+  return { message: 'Document ingested successfully', document: newDoc };
 }
 
 export async function deleteDocument(id) {
@@ -179,21 +221,28 @@ export async function deleteDocument(id) {
     const res = await fetch(`${API_BASE}/documents/${id}`, {
       method: 'DELETE'
     });
-    if (res.ok) return await res.json();
   } catch (e) {
     // Fallback
   }
+
+  const currentLocals = getLocalDocuments();
+  const updatedLocals = currentLocals.filter(d => d.id !== id);
+  saveLocalDocuments(updatedLocals);
+
   return { message: `Document ${id} deleted.` };
 }
 
 export async function fetchFaqs() {
   try {
     const res = await fetch(`${API_BASE}/faqs`);
-    if (res.ok) return await res.json();
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.faqs && data.faqs.length > 0) return data;
+    }
   } catch (e) {
     // Fallback
   }
-  return { faqs: [], count: 0 };
+  return { faqs: INITIAL_FAQS, count: INITIAL_FAQS.length };
 }
 
 export async function addFaq(question, answer, category) {
@@ -222,26 +271,11 @@ export async function deleteFaq(id) {
   return { message: `FAQ ${id} deleted.` };
 }
 
-export async function testVectorSearch(query, topK = 4) {
-  try {
-    const res = await fetch(`${API_BASE}/vector/search`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, topK })
-    });
-    if (res.ok) return await res.json();
-  } catch (e) {
-    // Fallback
-  }
-  return { query, results: [] };
-}
-
 export async function fetchStats() {
-  try {
-    const res = await fetch(`${API_BASE}/stats`);
-    if (res.ok) return await res.json();
-  } catch (e) {
-    // Fallback
-  }
-  return { totalDocuments: 10, totalFaqs: 9, totalVectorChunks: 42 };
+  const currentDocs = getLocalDocuments();
+  return { 
+    totalDocuments: currentDocs.length, 
+    totalFaqs: INITIAL_FAQS.length, 
+    totalVectorChunks: currentDocs.length * 4 
+  };
 }
