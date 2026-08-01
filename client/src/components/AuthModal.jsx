@@ -11,8 +11,9 @@ export default function AuthModal({
   customMessage = '', 
   onAuthSuccess 
 }) {
-  const [mode, setMode] = useState(initialMode); // 'signin' | 'signup'
+  const [mode, setMode] = useState(initialMode); // 'signin' | 'signup' | 'forgot'
   const [role, setRole] = useState('Student'); // 'Student' | 'Administrator'
+  const [resetSent, setResetSent] = useState(false);
   
   // Basic fields
   const [fullName, setFullName] = useState('');
@@ -36,6 +37,15 @@ export default function AuthModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
+
+    if (mode === 'forgot') {
+      if (!email) {
+        setError('Please enter your email address to reset password.');
+        return;
+      }
+      setResetSent(true);
+      return;
+    }
 
     if (!email || !password) {
       setError('Please fill in all required fields.');
@@ -408,8 +418,23 @@ export default function AuthModal({
         </form>
 
         {/* Toggle Mode Footer */}
-        <div className="mt-6 text-center text-xs text-slate-400 border-t border-white/10 pt-4">
-          {mode === 'signup' ? (
+        <div className="mt-6 text-center text-xs text-slate-400 border-t border-white/10 pt-4 space-y-2">
+          {resetSent ? (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-xl">
+              Password reset link sent to <strong>{email}</strong>! Check your inbox.
+            </div>
+          ) : mode === 'forgot' ? (
+            <p>
+              Remembered your password?{' '}
+              <button
+                type="button"
+                onClick={() => { setMode('signin'); setError(''); }}
+                className="font-bold text-teal-400 hover:underline"
+              >
+                Sign In
+              </button>
+            </p>
+          ) : mode === 'signup' ? (
             <p>
               Already have an account?{' '}
               <button
@@ -421,16 +446,26 @@ export default function AuthModal({
               </button>
             </p>
           ) : (
-            <p>
-              Don't have an account?{' '}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+              <p>
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => { setMode('signup'); setError(''); }}
+                  className="font-bold text-teal-400 hover:underline"
+                >
+                  Create Account
+                </button>
+              </p>
+
               <button
                 type="button"
-                onClick={() => { setMode('signup'); setError(''); }}
-                className="font-bold text-teal-400 hover:underline"
+                onClick={() => { setMode('forgot'); setError(''); }}
+                className="text-slate-400 hover:text-white hover:underline text-[11px]"
               >
-                Create Account
+                Forgot Password?
               </button>
-            </p>
+            </div>
           )}
         </div>
 

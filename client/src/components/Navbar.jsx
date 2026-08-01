@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Sparkles, MessageSquare, Database, Home, LogIn, UserPlus, 
-  LogOut, HelpCircle, GraduationCap, Shield, Lock
+  LogOut, HelpCircle, GraduationCap, Shield, Lock, Sun, Moon, BookOpen
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -9,6 +9,8 @@ export default function Navbar({
   setCurrentView, 
   stats, 
   currentUser, 
+  theme,
+  toggleTheme,
   onOpenAuth, 
   onLogout,
   onOpenProfile 
@@ -18,7 +20,7 @@ export default function Navbar({
 
   const handleNavClick = (view) => {
     if (view !== 'landing' && !currentUser) {
-      onOpenAuth('signin', `Please sign in or create an account as a Student or Administrator to access ${view === 'doubt-solver' ? 'Doubt Resolver' : view === 'admin' ? 'Admin Portal' : 'AI Assistant'}.`);
+      onOpenAuth('signin', `Please sign in or create an account as a Student or Administrator to access ${view === 'doubt-solver' ? 'Doubt Resolver' : view === 'student-hub' ? 'Student Hub' : view === 'admin' ? 'Admin Portal' : 'AI Assistant'}.`);
       return;
     }
     setCurrentView(view);
@@ -64,6 +66,21 @@ export default function Navbar({
             <Home className="h-4 w-4" />
             <span className="hidden sm:inline">Home</span>
           </button>
+
+          {/* Student Hub Tab (Visible for Students) */}
+          {isStudent && (
+            <button
+              onClick={() => handleNavClick('student-hub')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'student-hub' 
+                  ? 'bg-gradient-to-r from-teal-500/20 to-emerald-500/20 text-teal-300 border border-teal-500/40 shadow-sm' 
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <BookOpen className="h-4 w-4 text-teal-400" />
+              <span>Student Hub</span>
+            </button>
+          )}
 
           {/* Doubt Resolver tab */}
           <button

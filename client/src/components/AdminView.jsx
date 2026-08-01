@@ -320,8 +320,14 @@ export default function AdminView({ currentUser, onOpenAuth }) {
                 >
                   <option value="Academic Policy">Academic Policy</option>
                   <option value="Career & Placements">Career & Placements</option>
-                  <option value="Syllabus & Courses">Syllabus & Courses</option>
-                  <option value="Financial & Scholarships">Financial & Scholarships</option>
+                  <option value="Data Structures">Data Structures & Algorithms</option>
+                  <option value="DBMS">Database Systems (DBMS)</option>
+                  <option value="Operating Systems">Operating Systems</option>
+                  <option value="Computer Networks">Computer Networks</option>
+                  <option value="Artificial Intelligence">Artificial Intelligence</option>
+                  <option value="Machine Learning">Machine Learning</option>
+                  <option value="Python">Python Programming</option>
+                  <option value="Java">Java Programming</option>
                   <option value="General Reference">General Reference</option>
                 </select>
               </div>

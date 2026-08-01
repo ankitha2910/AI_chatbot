@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import LandingView from './components/LandingView';
 import FullChatView from './components/FullChatView';
 import DoubtSolverView from './components/DoubtSolverView';
+import StudentDashboardView from './components/StudentDashboardView';
 import AdminView from './components/AdminView';
 import ChatWidget from './components/ChatWidget';
 import AuthModal from './components/AuthModal';
@@ -10,7 +11,7 @@ import UserProfileModal from './components/UserProfileModal';
 import { fetchStats } from './services/api';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'doubt-solver' | 'chat' | 'admin'
+  const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'student-hub' | 'doubt-solver' | 'chat' | 'admin'
   const [activeQuery, setActiveQuery] = useState('');
   const [stats, setStats] = useState(null);
 
@@ -46,7 +47,7 @@ export default function App() {
 
   const handleNavigate = (view) => {
     if (view !== 'landing' && !currentUser) {
-      handleOpenAuth('signin', `Please sign in or create an account as a Student or Administrator to access ${view === 'doubt-solver' ? 'Doubt Resolver' : view === 'admin' ? 'Admin Portal' : 'AI Assistant'}.`);
+      handleOpenAuth('signin', `Please sign in or create an account as a Student or Administrator to access ${view === 'doubt-solver' ? 'Doubt Resolver' : view === 'student-hub' ? 'Student Hub' : view === 'admin' ? 'Admin Portal' : 'AI Assistant'}.`);
       return;
     }
     setCurrentView(view);
@@ -60,7 +61,7 @@ export default function App() {
     if (userObj.role === 'Administrator') {
       setCurrentView('admin');
     } else {
-      setCurrentView('chat');
+      setCurrentView('student-hub');
     }
   };
 
@@ -110,6 +111,15 @@ export default function App() {
             currentUser={currentUser}
             stats={stats} 
             onNavigateDoubtSolver={() => handleNavigate('doubt-solver')}
+            onNavigateStudentHub={() => handleNavigate('student-hub')}
+            onOpenProfile={() => setIsProfileOpen(true)}
+          />
+        )}
+
+        {currentView === 'student-hub' && (
+          <StudentDashboardView 
+            currentUser={currentUser}
+            onOpenAuth={handleOpenAuth}
             onOpenProfile={() => setIsProfileOpen(true)}
           />
         )}
