@@ -26,7 +26,6 @@ export default function FullChatView({ currentUser }) {
   const [sessionId] = useState(`full-chat-${Math.random().toString(36).substring(7)}`);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [lastVectorResults, setLastVectorResults] = useState(null);
-  const [showInspector, setShowInspector] = useState(true);
 
   const messagesEndRef = useRef(null);
 
@@ -276,18 +275,6 @@ export default function FullChatView({ currentUser }) {
               </div>
             </div>
           </div>
-
-          <button
-            onClick={() => setShowInspector(!showInspector)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-              showInspector 
-                ? 'bg-teal-500/10 text-teal-300 border-teal-500/30' 
-                : 'bg-white/5 text-slate-300 border-white/10'
-            }`}
-          >
-            <Database className="h-3.5 w-3.5" />
-            <span>{showInspector ? 'Hide Vector Inspector' : 'Show Vector Inspector'}</span>
-          </button>
         </div>
 
         {/* Message Stream Scroll Area */}
@@ -444,33 +431,6 @@ export default function FullChatView({ currentUser }) {
         </div>
 
       </main>
-
-      {/* Vector Store Context Inspector (Right Panel) */}
-      {showInspector && lastVectorResults && (
-        <aside className="w-80 border-l border-white/10 bg-[#080d1a] p-4 hidden lg:flex flex-col space-y-4 overflow-y-auto">
-          <div className="flex items-center gap-2 pb-3 border-b border-white/10 text-xs font-bold text-teal-400 font-heading">
-            <Cpu className="h-4 w-4" />
-            <span>Retrieved Vector Chunks</span>
-          </div>
-
-          <div className="space-y-3 text-xs">
-            <div className="flex justify-between items-center text-[10px] text-slate-400">
-              <span>Query Similarity Top Match:</span>
-              <span className="font-bold text-teal-300">{lastVectorResults.citations?.[0]?.matchPercentage || 0}%</span>
-            </div>
-
-            {lastVectorResults.citations?.map((chunk, idx) => (
-              <div key={idx} className="glass-card p-3 rounded-xl border border-white/10 space-y-1.5">
-                <span className="font-bold text-xs text-white block">{chunk.docTitle}</span>
-                <span className="text-[10px] text-teal-400 block font-semibold">{chunk.category}</span>
-                <p className="text-[11px] text-slate-300 font-mono bg-black/40 p-2 rounded-lg leading-relaxed line-clamp-4">
-                  "{chunk.snippet}"
-                </p>
-              </div>
-            ))}
-          </div>
-        </aside>
-      )}
 
     </div>
   );

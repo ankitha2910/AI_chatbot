@@ -7,14 +7,14 @@ import {
 } from 'lucide-react';
 import { 
   fetchDocuments, uploadDocument, deleteDocument, 
-  fetchFaqs, addFaq, deleteFaq, testVectorSearch, fetchStats 
+  fetchFaqs, addFaq, deleteFaq, fetchStats 
 } from '../services/api';
 
 export default function AdminView({ currentUser, onOpenAuth }) {
   const [documents, setDocuments] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [stats, setStats] = useState(null);
-  const [activeTab, setActiveTab] = useState('documents'); // 'documents' | 'faqs' | 'testbench'
+  const [activeTab, setActiveTab] = useState('documents'); // 'documents' | 'faqs'
 
   // Document Ingestion Form states
   const [docTitle, setDocTitle] = useState('');
@@ -36,11 +36,6 @@ export default function AdminView({ currentUser, onOpenAuth }) {
   const [faqAnswer, setFaqAnswer] = useState('');
   const [faqCategory, setFaqCategory] = useState('Data Structures');
   const [isSubmittingFaq, setIsSubmittingFaq] = useState(false);
-
-  // Vector testbench state
-  const [testQuery, setTestQuery] = useState('');
-  const [testResults, setTestResults] = useState(null);
-  const [isTesting, setIsTesting] = useState(false);
 
   const [notification, setNotification] = useState(null);
 
@@ -370,18 +365,6 @@ export default function AdminView({ currentUser, onOpenAuth }) {
           <HelpCircle className="h-4 w-4 text-indigo-400" />
           <span>Structured FAQs ({faqs.length})</span>
         </button>
-
-        <button
-          onClick={() => setActiveTab('testbench')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-            activeTab === 'testbench' 
-              ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40' 
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Cpu className="h-4 w-4 text-violet-400" />
-          <span>Vector Search Testbench</span>
-        </button>
       </div>
 
       {/* TAB 1: Document Ingestion Suite */}
@@ -681,56 +664,6 @@ export default function AdminView({ currentUser, onOpenAuth }) {
             ))}
           </div>
 
-        </div>
-      )}
-
-      {/* TAB 3: Vector Testbench */}
-      {activeTab === 'testbench' && (
-        <div className="space-y-6">
-          <div className="glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2 font-heading">
-              <Cpu className="h-4 w-4 text-violet-400" />
-              Vector Similarity Matcher & Embedding Inspector
-            </h2>
-
-            <form onSubmit={handleRunVectorTest} className="flex gap-3">
-              <input
-                type="text"
-                value={testQuery}
-                onChange={(e) => setTestQuery(e.target.value)}
-                placeholder="Enter sample query (e.g. 'Explain DFS' or 'What is DBMS?')"
-                className="flex-1 rounded-xl border border-white/10 bg-[#0d1424] px-4 py-2.5 text-xs text-white outline-none focus:border-violet-500"
-              />
-              <button
-                type="submit"
-                disabled={isTesting}
-                className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 font-bold text-xs text-white shadow-lg cursor-pointer"
-              >
-                {isTesting ? 'Searching...' : 'Run Vector Search'}
-              </button>
-            </form>
-          </div>
-
-          {testResults && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-white">Top Retrievable Chunks ({testResults.length})</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {testResults.map((chunk, idx) => (
-                  <div key={idx} className="glass-card p-4 rounded-xl border border-white/10 space-y-2">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-white">{chunk.docTitle}</span>
-                      <span className="font-bold text-teal-300 bg-teal-500/10 px-2 py-0.5 rounded-md border border-teal-500/30">
-                        {chunk.matchPercentage}% Match
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-300 font-mono bg-black/40 p-3 rounded-lg leading-relaxed">
-                      "{chunk.content}"
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
