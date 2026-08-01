@@ -95,24 +95,21 @@ export default function Navbar({
             {!currentUser && <Lock className="h-3 w-3 text-slate-400 opacity-60 ml-0.5" />}
           </button>
 
-          {/* Knowledge Admin / Admin Portal Tab */}
-          <button
-            onClick={() => handleNavClick('admin')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-              currentView === 'admin' 
-                ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 border border-indigo-500/40' 
-                : isAdmin
-                  ? 'text-indigo-300 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
-            }`}
-            title={!currentUser ? "Sign in as Administrator to access" : "Knowledge Admin Studio"}
-          >
-            <Database className="h-4 w-4 text-indigo-400" />
-            <span>
-              {isAdmin ? 'Knowledge Admin Studio' : 'Admin Portal'}
-            </span>
-            {!currentUser && <Lock className="h-3 w-3 text-slate-400 opacity-60 ml-0.5" />}
-          </button>
+          {/* Knowledge Admin Studio Tab (ONLY visible for Administrator logins) */}
+          {isAdmin && (
+            <button
+              onClick={() => handleNavClick('admin')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                currentView === 'admin' 
+                  ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm shadow-indigo-500/10' 
+                  : 'text-indigo-300 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20'
+              }`}
+              title="Knowledge Admin Studio"
+            >
+              <Database className="h-4 w-4 text-indigo-400" />
+              <span>Knowledge Admin Studio</span>
+            </button>
+          )}
         </nav>
 
         {/* Auth / Profile Controls */}
