@@ -57,7 +57,9 @@ export default function StudentDashboardView({ currentUser, onOpenAuth, onOpenPr
               readTime: '5 min read',
               size: isPdf ? 'PDF File' : 'Text',
               type: isPdf ? 'PDF Document' : 'Course Note',
-              fileUrl: doc.fileUrl || doc.file_url || null
+              fileUrl: doc.fileUrl || doc.file_url || null,
+              department: doc.department || 'All Departments',
+              semester: doc.semester || 'All Semesters'
             };
 
             if (isPdf) {
@@ -75,7 +77,16 @@ export default function StudentDashboardView({ currentUser, onOpenAuth, onOpenPr
         setIsLoadingDocs(false);
       }
     };
+    
+    // Initial Load
     loadDocs();
+
+    // Setup Polling every 10 seconds for real-time updates
+    const intervalId = setInterval(() => {
+      loadDocs();
+    }, 10000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   // Helper to generate 100% VALID PDF 1.4 Binary Blob that opens cleanly in Chrome / Edge PDF Viewers
@@ -198,12 +209,29 @@ startxref
     printWindow.document.close();
   };
 
+  const userDept = currentUser?.department || 'Computer Science & Engineering';
+  const userSem = currentUser?.semester || 'Semester 4 (Year 2)';
+
+  const matchesMetadata = (doc) => {
+    // If it's a global document, everyone sees it
+    if (doc.department === 'All Departments' && doc.semester === 'All Semesters') return true;
+    
+    const cleanStr = (s) => (s || '').toLowerCase().replace(/\s+/g, '');
+    
+    const deptMatch = doc.department === 'All Departments' || cleanStr(doc.department) === cleanStr(userDept);
+    const semMatch = doc.semester === 'All Semesters' || cleanStr(doc.semester) === cleanStr(userSem);
+                     
+    return deptMatch && semMatch;
+  };
+
   const filteredNotes = notesList.filter(n => 
+    matchesMetadata(n) &&
     (selectedSubject === 'All' || n.subject === selectedSubject) &&
     (n.title.toLowerCase().includes(searchQuery.toLowerCase()) || n.summary.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredPdfs = pdfsList.filter(p => 
+    matchesMetadata(p) &&
     (selectedSubject === 'All' || p.subject === selectedSubject) &&
     p.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -387,9 +415,14 @@ startxref
               <p className="text-slate-400 text-sm">Syncing PDFs...</p>
             </div>
           ) : filteredPdfs.length === 0 ? (
-            <div className="text-center py-20 border border-white/5 bg-white/5 rounded-2xl">
-              <FileText className="h-8 w-8 text-slate-500 mx-auto mb-3" />
-              <p className="text-slate-400">No PDFs available for this subject.</p>
+            <div className="text-center py-24 border border-white/5 bg-white/5 rounded-3xl max-w-2xl mx-auto shadow-inner mt-8">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 mx-auto mb-4">
+                <FileText className="h-8 w-8" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">No PDFs Available</h3>
+              <p className="text-slate-400 text-sm px-6 max-w-md mx-auto">
+                There are no uploaded PDF handbooks or course guides for <span className="text-white font-medium">{userDept}</span> - <span className="text-white font-medium">{userSem}</span> yet. Check back later when your professors upload materials, or verify your Role Profile settings.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

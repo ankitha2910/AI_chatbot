@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { 
   fetchDocuments, uploadDocument, deleteDocument, 
-  fetchFaqs, addFaq, deleteFaq, fetchStats 
+  fetchFaqs, addFaq, deleteFaq, fetchStats, syncStorage
 } from '../services/api';
 
 export default function AdminView({ currentUser, onOpenAuth }) {
@@ -25,6 +25,10 @@ export default function AdminView({ currentUser, onOpenAuth }) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [progressStage, setProgressStage] = useState('');
+  const [docDepartment, setDocDepartment] = useState('All Departments');
+  const [docSemester, setDocSemester] = useState('All Semesters');
+  const [docStatus, setDocStatus] = useState('published');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Table filter states
   const [docSearchQuery, setDocSearchQuery] = useState('');
@@ -64,6 +68,19 @@ export default function AdminView({ currentUser, onOpenAuth }) {
   const showNotify = (type, message) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 4000);
+  };
+
+  const handleSyncStorage = async () => {
+    setIsSyncing(true);
+    showNotify('success', 'Starting storage sync. This may take a moment...');
+    const res = await syncStorage();
+    if (res && res.message) {
+      showNotify('success', res.message);
+      loadData(); // refresh documents
+    } else {
+      showNotify('error', 'Storage sync failed or is unavailable.');
+    }
+    setIsSyncing(false);
   };
 
   // Drag and Drop Handlers
@@ -150,7 +167,16 @@ export default function AdminView({ currentUser, onOpenAuth }) {
       }, 800);
 
       // Perform actual upload & indexing
-      const res = await uploadDocument(docTitle, docCategory, docContent, selectedFile);
+      const res = await uploadDocument(
+        docTitle, 
+        docCategory, 
+        docContent, 
+        docDepartment, 
+        docSemester, 
+        currentUser?.name || 'Admin', 
+        docStatus, 
+        selectedFile
+      );
       
       setUploadProgress(100);
       setProgressStage('Vector Indexing Complete!');
@@ -397,6 +423,18 @@ startxref
         )}
       </div>
 
+      {/* Admin Quick Actions */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleSyncStorage}
+          disabled={isSyncing}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+          <span>{isSyncing ? 'Syncing Storage...' : 'Sync Orphaned Storage Files'}</span>
+        </button>
+      </div>
+
       {/* Notification Toast */}
       {notification && (
         <div className={`p-4 rounded-xl border flex items-center gap-3 text-xs animate-slide-up ${
@@ -474,6 +512,52 @@ startxref
                   <option value="Java">Java Programming</option>
                   <option value="Academic Policy">Academic Policy</option>
                   <option value="Career & Placements">Career & Placements</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Department</label>
+                  <select
+                    value={docDepartment}
+                    onChange={(e) => setDocDepartment(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-[#0d1424] px-3.5 py-2.5 text-white focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="All Departments">All Departments</option>
+                    <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Electronics">Electronics</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Semester</label>
+                  <select
+                    value={docSemester}
+                    onChange={(e) => setDocSemester(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-[#0d1424] px-3.5 py-2.5 text-white focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="All Semesters">All Semesters</option>
+                    <option value="Semester 1 (Year 1)">Semester 1 (Year 1)</option>
+                    <option value="Semester 2 (Year 1)">Semester 2 (Year 1)</option>
+                    <option value="Semester 3 (Year 2)">Semester 3 (Year 2)</option>
+                    <option value="Semester 4 (Year 2)">Semester 4 (Year 2)</option>
+                    <option value="Semester 5 (Year 3)">Semester 5 (Year 3)</option>
+                    <option value="Semester 6 (Year 3)">Semester 6 (Year 3)</option>
+                    <option value="Semester 7 (Year 4)">Semester 7 (Year 4)</option>
+                    <option value="Semester 8 (Year 4)">Semester 8 (Year 4)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Status</label>
+                <select
+                  value={docStatus}
+                  onChange={(e) => setDocStatus(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-[#0d1424] px-3.5 py-2.5 text-white focus:border-teal-500 focus:outline-none"
+                >
+                  <option value="published">Published (Visible to Students)</option>
+                  <option value="draft">Draft (Hidden)</option>
                 </select>
               </div>
 

@@ -203,6 +203,8 @@ class VectorStoreEngine {
           docId: doc.id,
           docTitle: doc.title,
           category: doc.category,
+          department: doc.department || 'All Departments',
+          semester: doc.semester || 'All Semesters',
           type: 'document',
           content: text,
           chunkIndex: index + 1,
@@ -220,6 +222,8 @@ class VectorStoreEngine {
         docId: faq.id,
         docTitle: `FAQ: ${faq.question}`,
         category: faq.category,
+        department: 'All Departments',
+        semester: 'All Semesters',
         type: 'faq',
         content: text,
         chunkIndex: 1,
@@ -251,6 +255,11 @@ class VectorStoreEngine {
           category: d.category,
           content: d.content,
           fileUrl: d.file_url,
+          fileName: d.file_name,
+          department: d.department,
+          semester: d.semester,
+          uploadedBy: d.uploaded_by,
+          status: d.status,
           uploadedAt: d.created_at
         }));
         console.log(`✅ Loaded ${this.documents.length} persistent documents from Supabase.`);
@@ -262,7 +271,12 @@ class VectorStoreEngine {
             title: doc.title,
             category: doc.category,
             content: doc.content,
-            file_url: doc.fileUrl || null
+            file_url: doc.fileUrl || null,
+            file_name: doc.fileName || null,
+            department: doc.department || 'All Departments',
+            semester: doc.semester || 'All Semesters',
+            uploaded_by: doc.uploadedBy || 'Admin',
+            status: doc.status || 'published'
           });
         }
         console.log(`✅ Seeded ${this.documents.length} documents into Supabase.`);
@@ -276,6 +290,8 @@ class VectorStoreEngine {
           docId: c.doc_id,
           docTitle: c.doc_title,
           category: c.category,
+          department: c.department,
+          semester: c.semester,
           type: c.type,
           content: c.content,
           chunkIndex: c.chunk_index,
@@ -291,6 +307,8 @@ class VectorStoreEngine {
             doc_id: chunk.docId,
             doc_title: chunk.docTitle,
             category: chunk.category,
+            department: chunk.department || 'All Departments',
+            semester: chunk.semester || 'All Semesters',
             type: chunk.type,
             content: chunk.content,
             chunk_index: chunk.chunkIndex || 1,
@@ -308,14 +326,19 @@ class VectorStoreEngine {
   /**
    * Adds a new document to the vector store (and Supabase if connected)
    */
-  addDocument({ title, category, content, fileUrl }) {
+  addDocument({ title, category, content, fileUrl, fileName, department, semester, uploadedBy, status }) {
     const newDoc = {
       id: `doc-${crypto.randomUUID().substring(0, 8)}`,
       title,
       category: category || "General Reference",
       uploadedAt: new Date().toISOString(),
       content,
-      fileUrl: fileUrl || null
+      fileUrl: fileUrl || null,
+      fileName: fileName || null,
+      department: department || 'All Departments',
+      semester: semester || 'All Semesters',
+      uploadedBy: uploadedBy || 'Admin',
+      status: status || 'published'
     };
 
     this.documents.unshift(newDoc);
@@ -327,8 +350,13 @@ class VectorStoreEngine {
         id: newDoc.id,
         title: newDoc.title,
         category: newDoc.category,
+        department: newDoc.department,
+        semester: newDoc.semester,
         content: newDoc.content,
-        file_url: newDoc.fileUrl || null
+        file_url: newDoc.fileUrl || null,
+        file_name: newDoc.fileName || null,
+        uploaded_by: newDoc.uploadedBy || 'Admin',
+        status: newDoc.status || 'published'
       }).then(() => {
         // Sync document chunks
         const docChunks = this.chunks.filter(c => c.docId === newDoc.id);

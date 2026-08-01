@@ -85,6 +85,11 @@ app.get(['/api/documents', '/documents'], async (req, res) => {
           category: d.category,
           content: d.content,
           fileUrl: d.file_url,
+          fileName: d.file_name,
+          department: d.department,
+          semester: d.semester,
+          uploadedBy: d.uploaded_by,
+          status: d.status,
           uploadedAt: d.created_at
         }));
         // Update local memory state for the RAG engine
@@ -102,12 +107,79 @@ app.get(['/api/documents', '/documents'], async (req, res) => {
   });
 });
 
+// Storage Synchronization Endpoint (Reconcile orphaned files in storage)
+app.post(['/api/documents/sync-storage', '/documents/sync-storage'], async (req, res) => {
+  if (!isSupabaseConnected() || !supabase) {
+    return res.status(500).json({ error: "Supabase is not connected" });
+  }
+  
+  try {
+    // 1. Fetch all files from 'documents' bucket
+    const { data: storageFiles, error: storageError } = await supabase.storage.from('documents').list();
+    if (storageError) throw storageError;
+    if (!storageFiles || storageFiles.length === 0) return res.json({ message: "No files found in storage.", synced: 0 });
+
+    // 2. Fetch all existing documents from DB
+    const { data: dbDocs, error: dbError } = await supabase.from('documents').select('file_name, file_url');
+    if (dbError) throw dbError;
+
+    // Build a set of known files
+    const knownFiles = new Set(dbDocs.map(d => d.file_name).filter(Boolean));
+    
+    // Fallback: check file_url if file_name is missing
+    dbDocs.forEach(d => {
+      if (d.file_url) {
+        const urlParts = d.file_url.split('/');
+        knownFiles.add(urlParts[urlParts.length - 1]);
+      }
+    });
+
+    let syncedCount = 0;
+    
+    // 3. For each orphaned file, insert a draft record
+    for (const file of storageFiles) {
+      // Skip empty placeholder .emptyFolderPlaceholder
+      if (file.name === '.emptyFolderPlaceholder' || !file.name) continue;
+
+      if (!knownFiles.has(file.name)) {
+        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(file.name);
+        
+        const newDoc = {
+          id: `doc-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          title: `Recovered Document: ${file.name}`,
+          category: 'General Reference',
+          content: 'Recovered from storage bucket. Pending content indexing.',
+          file_url: publicUrl,
+          file_name: file.name,
+          department: 'All Departments',
+          semester: 'All Semesters',
+          uploaded_by: 'System Recovery',
+          status: 'draft'
+        };
+
+        const { error: insertError } = await supabase.from('documents').insert(newDoc);
+        if (!insertError) {
+          syncedCount++;
+        } else {
+          console.warn(`Failed to recover orphaned file ${file.name}:`, insertError.message);
+        }
+      }
+    }
+
+    res.json({ message: `Successfully synchronized ${syncedCount} orphaned documents.`, synced: syncedCount });
+  } catch (err) {
+    console.error("Storage sync failed:", err.message);
+    res.status(500).json({ error: "Storage sync failed", details: err.message });
+  }
+});
+
 // Ingest / Upload Document (Text or PDF simulation)
 app.post(['/api/documents/upload', '/documents/upload'], upload.single('file'), async (req, res) => {
   try {
-    const { title, category, textContent } = req.body;
+    const { title, category, textContent, department, semester, uploaded_by, status } = req.body;
     let finalContent = textContent || '';
     let fileUrl = null;
+    let fileName = null;
 
     if (req.file) {
       const filePath = req.file.path;
@@ -122,7 +194,7 @@ app.post(['/api/documents/upload', '/documents/upload'], upload.single('file'), 
       // Upload file to Supabase Storage if connected
       if (isSupabaseConnected() && supabase) {
         const fileData = fs.readFileSync(filePath);
-        const fileName = `${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        fileName = `${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
         
         const { data: uploadData, error: uploadError } = await supabase
           .storage
@@ -150,7 +222,12 @@ app.post(['/api/documents/upload', '/documents/upload'], upload.single('file'), 
       title: title.trim(),
       category: category || 'General Ingested',
       content: finalContent.trim(),
-      fileUrl: fileUrl
+      fileUrl: fileUrl,
+      fileName: fileName,
+      department: department || 'All Departments',
+      semester: semester || 'All Semesters',
+      uploadedBy: uploaded_by || 'Admin',
+      status: status || 'published'
     });
 
     res.status(201).json({

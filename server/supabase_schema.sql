@@ -15,8 +15,21 @@ CREATE TABLE IF NOT EXISTS public.documents (
     category TEXT DEFAULT 'General Reference',
     content TEXT NOT NULL,
     file_url TEXT,
+    department TEXT DEFAULT 'All Departments',
+    semester TEXT DEFAULT 'All Semesters',
+    file_name TEXT,
+    uploaded_by TEXT DEFAULT 'Admin',
+    status TEXT DEFAULT 'published',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Backwards compatibility for existing tables
+ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS department TEXT DEFAULT 'All Departments';
+ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS semester TEXT DEFAULT 'All Semesters';
+ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS file_name TEXT;
+ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS uploaded_by TEXT DEFAULT 'Admin';
+ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'published';
+
 
 -- 3. FAQs Table
 CREATE TABLE IF NOT EXISTS public.faqs (
@@ -33,6 +46,8 @@ CREATE TABLE IF NOT EXISTS public.vector_chunks (
     doc_id TEXT REFERENCES public.documents(id) ON DELETE CASCADE,
     doc_title TEXT NOT NULL,
     category TEXT DEFAULT 'General Reference',
+    department TEXT DEFAULT 'All Departments',
+    semester TEXT DEFAULT 'All Semesters',
     type TEXT NOT NULL DEFAULT 'document',
     content TEXT NOT NULL,
     chunk_index INT,
@@ -40,6 +55,10 @@ CREATE TABLE IF NOT EXISTS public.vector_chunks (
     embedding vector(384),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Backwards compatibility for existing tables
+ALTER TABLE public.vector_chunks ADD COLUMN IF NOT EXISTS department TEXT DEFAULT 'All Departments';
+ALTER TABLE public.vector_chunks ADD COLUMN IF NOT EXISTS semester TEXT DEFAULT 'All Semesters';
 
 -- Index for fast cosine similarity vector search
 CREATE INDEX IF NOT EXISTS vector_chunks_embedding_idx 
@@ -58,6 +77,8 @@ RETURNS TABLE (
     doc_id TEXT,
     doc_title TEXT,
     category TEXT,
+    department TEXT,
+    semester TEXT,
     type TEXT,
     content TEXT,
     chunk_index INT,
@@ -71,6 +92,8 @@ AS $$
         vc.doc_id,
         vc.doc_title,
         vc.category,
+        vc.department,
+        vc.semester,
         vc.type,
         vc.content,
         vc.chunk_index,

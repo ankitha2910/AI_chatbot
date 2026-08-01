@@ -177,11 +177,25 @@ export async function fetchDocuments() {
   return { documents: localDocs, count: localDocs.length };
 }
 
-export async function uploadDocument(title, category, textContent, file = null) {
+export async function syncStorage() {
+  try {
+    const res = await fetch(`${API_BASE}/documents/sync-storage`, { method: 'POST' });
+    if (res.ok) return await res.json();
+  } catch (e) {
+    console.warn("Sync storage failed:", e);
+  }
+  return { error: 'Sync failed' };
+}
+
+export async function uploadDocument(title, category, textContent, department, semester, uploadedBy, status, file = null) {
   const newDoc = {
     id: `doc-${Date.now()}`,
     title: title.trim(),
     category: category || 'General Reference',
+    department: department || 'All Departments',
+    semester: semester || 'All Semesters',
+    uploadedBy: uploadedBy || 'Admin',
+    status: status || 'published',
     content: textContent || (file ? `File content uploaded: ${file.name}` : 'Ingested Document Content'),
     uploadedAt: new Date().toISOString()
   };
@@ -190,6 +204,10 @@ export async function uploadDocument(title, category, textContent, file = null) 
     const formData = new FormData();
     formData.append('title', title);
     formData.append('category', category);
+    formData.append('department', department);
+    formData.append('semester', semester);
+    formData.append('uploaded_by', uploadedBy);
+    formData.append('status', status);
     formData.append('textContent', textContent);
     if (file) {
       formData.append('file', file);
